@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AhirConnect — Ahir Samaj Community</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Supabase JS client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  --indigo:#1F2A52;
+  --indigo-deep:#141B3B;
+  --turmeric:#E3A33B;
+  --turmeric-light:#F3C86B;
+  --cream:#FBF4E6;
+  --maroon:#7A2E3A;
+  --peacock:#2F6F62;
+  --ink:#241B12;
+  --line:#E4D5B7;
+  --white:#FFFDF8;
+  --radius:14px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:'Poppins',sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  min-height:100vh;
+}
+h1,h2,h3,.brand{font-family:'Yatra One',cursive; font-weight:400;}
+::selection{background:var(--turmeric-light);}
+
+.feather-bg{
+  position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none;
+  background-image: radial-gradient(circle at 20% 30%, var(--peacock) 0%, transparent 40%),
+                     radial-gradient(circle at 80% 70%, var(--turmeric) 0%, transparent 40%);
+}
+
+#authScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.auth-card{
+  background:var(--white); border:1px solid var(--line); border-radius:20px;
+  padding:40px 36px; width:100%; max-width:400px;
+  box-shadow:0 20px 60px rgba(31,42,82,.12);
+  position:relative; overflow:hidden;
+}
+.auth-card::before{
+  content:""; position:absolute; top:-40px; right:-40px; width:140px; height:140px;
+  border-radius:50%; background:radial-gradient(circle, var(--turmeric-light), transparent 70%);
+}
+.brand-row{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+.brand{font-size:30px; color:var(--indigo);}
+.brand span{color:var(--maroon);}
+.tagline{font-size:13px; color:#8a7a5c; margin-bottom:28px; letter-spacing:.3px;}
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:12px; font-weight:600; color:var(--indigo); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;}
+.field input, .field textarea{
+  width:100%; padding:11px 14px; border:1.5px solid var(--line); border-radius:10px;
+  font-family:'Poppins',sans-serif; font-size:14px; background:var(--cream); color:var(--ink);
+  outline:none; transition:border-color .15s;
+}
+.field input:focus, .field textarea:focus{border-color:var(--turmeric);}
+.btn{
+  width:100%; padding:12px; border:none; border-radius:10px; font-weight:600; font-size:14px;
+  cursor:pointer; transition:transform .1s, box-shadow .15s; font-family:'Poppins',sans-serif;
+}
+.btn-primary{background:var(--indigo); color:var(--turmeric-light);}
+.btn-primary:hover{box-shadow:0 8px 20px rgba(31,42,82,.3); transform:translateY(-1px);}
+.btn:disabled{opacity:.6; cursor:default;}
+.switch-auth{text-align:center; margin-top:18px; font-size:13px; color:#8a7a5c;}
+.switch-auth a{color:var(--maroon); font-weight:600; cursor:pointer; text-decoration:none;}
+.error-msg{background:#FBE4E4; color:#A23B3B; padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; display:none;}
+
+#appScreen{display:none; min-height:100vh;}
+.app-shell{display:flex; min-height:100vh;}
+.sidebar{
+  width:230px; background:var(--indigo); color:var(--white); flex-shrink:0;
+  display:flex; flex-direction:column; padding:24px 0; position:sticky; top:0; height:100vh;
+}
+.sidebar .brand-row{padding:0 24px; margin-bottom:32px;}
+.sidebar .brand{color:var(--turmeric-light); font-size:24px;}
+.nav-item{
+  display:flex; align-items:center; gap:12px; padding:13px 24px; cursor:pointer;
+  font-size:14px; font-weight:500; color:#C8CCE0; border-left:3px solid transparent; position:relative;
+}
+.nav-item:hover{background:rgba(255,255,255,.05); color:var(--white);}
+.nav-item.active{background:rgba(227,163,59,.12); color:var(--turmeric-light); border-left-color:var(--turmeric);}
+.nav-badge{ background:var(--maroon); color:white; font-size:10px; padding:1px 6px; border-radius:10px; margin-left:auto; }
+.sidebar-footer{margin-top:auto; padding:16px 24px; border-top:1px solid rgba(255,255,255,.1);}
+.mini-profile{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.avatar{width:38px; height:38px; border-radius:50%; object-fit:cover; background:var(--turmeric-light); flex-shrink:0;}
+.avatar-lg{width:64px; height:64px;}
+.mini-profile .name{font-size:13px; font-weight:600; color:var(--white);}
+.logout-link{font-size:12px; color:#9FA6C4; cursor:pointer;}
+.logout-link:hover{color:var(--turmeric-light);}
+
+.main-panel{flex:1; padding:32px 40px; max-width:760px; margin:0 auto; width:100%;}
+.panel-title{font-size:26px; color:var(--indigo); margin-bottom:20px;}
+
+.composer{ background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:24px; }
+.composer textarea{
+  width:100%; border:none; resize:none; font-family:'Poppins',sans-serif; font-size:14px;
+  background:transparent; outline:none; min-height:50px; color:var(--ink);
+}
+.composer-actions{display:flex; align-items:center; justify-content:space-between; margin-top:10px; border-top:1px solid var(--line); padding-top:12px;}
+.file-label{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--peacock); cursor:pointer; font-weight:500; }
+.post-btn{width:auto; padding:9px 22px;}
+.preview-media{max-width:100%; border-radius:10px; margin-top:10px; max-height:280px; display:block;}
+
+.post-card{ background:var(--white); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:20px; overflow:hidden; }
+.post-head{display:flex; align-items:center; gap:10px; padding:14px 16px;}
+.post-head .name{font-size:14px; font-weight:600; color:var(--indigo);}
+.post-head .time{font-size:11px; color:#a08c66;}
+.post-caption{padding:0 16px 12px; font-size:14px; line-height:1.5;}
+.post-media{width:100%; max-height:480px; object-fit:cover; display:block; background:#000;}
+.empty-state{text-align:center; padding:60px 20px; color:#a08c66; font-size:14px;}
+.empty-state .big{font-size:40px; margin-bottom:10px;}
+
+.search-row{display:flex; gap:10px; margin-bottom:20px;}
+.search-row input{flex:1;}
+.user-row{
+  display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--white);
+  border:1px solid var(--line); border-radius:12px; margin-bottom:10px;
+}
+.user-row .name{font-weight:600; font-size:14px; color:var(--indigo); flex:1;}
+.small-btn{padding:7px 16px; font-size:12px; width:auto; border-radius:8px;}
+.btn-accept{background:var(--peacock); color:white;}
+.btn-decline{background:transparent; color:var(--maroon); border:1.5px solid var(--maroon);}
+.btn-add{background:var(--turmeric); color:var(--indigo-deep);}
+.tag-pending{font-size:11px; color:#a08c66; font-style:italic;}
+
+.chat-layout{display:flex; gap:0; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; height:70vh;}
+.chat-list{width:220px; border-right:1px solid var(--line); overflow-y:auto; flex-shrink:0;}
+.chat-list-item{display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; border-bottom:1px solid var(--line);}
+.chat-list-item:hover, .chat-list-item.active{background:var(--cream);}
+.chat-thread{flex:1; display:flex; flex-direction:column;}
+.chat-messages{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:8px;}
+.msg-bubble{max-width:70%; padding:9px 13px; border-radius:14px; font-size:13.5px; line-height:1.4;}
+.msg-mine{align-self:flex-end; background:var(--indigo); color:var(--turmeric-light); border-bottom-right-radius:4px;}
+.msg-theirs{align-self:flex-start; background:var(--cream); color:var(--ink); border-bottom-left-radius:4px;}
+.chat-input-row{display:flex; gap:8px; padding:12px; border-top:1px solid var(--line);}
+.chat-input-row input{flex:1;}
+.chat-input-row button{width:auto; padding:10px 18px;}
+.chat-placeholder{flex:1; display:flex; align-items:center; justify-content:center; color:#a08c66; font-size:13px;}
+
+.profile-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:24px; text-align:center;}
+.profile-card .avatar-lg{margin:0 auto 12px;}
+
+@media(max-width:760px){
+  .app-shell{flex-direction:column;}
+  .sidebar{width:100%; height:auto; flex-direction:row; overflow-x:auto; padding:12px 0; position:static;}
+  .sidebar .brand-row{display:none;}
+  .sidebar-footer{display:none;}
+  .nav-item{flex-direction:column; gap:4px; padding:8px 16px; white-space:nowrap; font-size:11px;}
+  .main-panel{padding:20px 16px;}
+}
+</style>
+</head>
+<body>
+<div class="feather-bg"></div>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="brand-row"><span class="brand">Ahir<span>Connect</span></span></div>
+    <div class="tagline">Jai Shree Krishna 🦚 — Connecting the Ahir Samaj, everywhere.</div>
+    <div class="error-msg" id="authError"></div>
+
+    <form id="loginForm">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" required></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" required></div>
+      <button class="btn btn-primary" type="submit">Log In</button>
+    </form>
+
+    <form id="signupForm" style="display:none;">
+      <div class="field"><label>Full Name</label><input type="text" id="signupName" required></div>
+      <div class="field"><label>Email</label><input type="email" id="signupEmail" required></div>
+      <div class="field"><label>Password</label><input type="password" id="signupPassword" minlength="6" required></div>
+      <button class="btn btn-primary" type="submit">Create Account</button>
+    </form>
+
+    <div class="switch-auth" id="switchToSignup">New here? <a>Create an account</a></div>
+    <div class="switch-auth" id="switchToLogin" style="display:none;">Already a member? <a>Log in</a></div>
+  </div>
+</div>
+
+<!-- ============ APP SCREEN ============ -->
+<div id="appScreen">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="brand-row"><span class="brand">Ahir<span>Connect</span></span></div>
+      <div class="nav-item active" data-panel="feed">🏠 Feed</div>
+      <div class="nav-item" data-panel="friends">🔍 Find Friends</div>
+      <div class="nav-item" data-panel="requests">🤝 Requests <span class="nav-badge" id="reqBadge" style="display:none;">0</span></div>
+      <div class="nav-item" data-panel="chat">💬 Chat</div>
+      <div class="nav-item" data-panel="profile">👤 Profile</div>
+      <div class="sidebar-footer">
+        <div class="mini-profile">
+          <img class="avatar" id="sideAvatar" src="">
+          <div class="name" id="sideName">—</div>
+        </div>
+        <div class="logout-link" id="logoutBtn">Log out</div>
+      </div>
+    </div>
+
+    <div class="main-panel">
+      <!-- FEED -->
+      <div class="panel" id="panel-feed">
+        <h2 class="panel-title">Community Feed</h2>
+        <div class="composer">
+          <textarea id="postCaption" placeholder="Share something with your friends..."></textarea>
+          <div id="mediaPreviewWrap"></div>
+          <div class="composer-actions">
+            <label class="file-label">📷 Photo / Video<input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;"></label>
+            <button class="btn btn-primary post-btn" id="postBtn">Post</button>
+          </div>
+        </div>
+        <div id="feedList"></div>
+      </div>
+
+      <!-- FIND FRIENDS -->
+      <div class="panel" id="panel-friends" style="display:none;">
+        <h2 class="panel-title">Find Friends</h2>
+        <div class="search-row"><input type="text" id="userSearch" placeholder="Search by name..."></div>
+        <div id="friendSearchResults"></div>
+      </div>
+
+      <!-- REQUESTS -->
+      <div class="panel" id="panel-requests" style="display:none;">
+        <h2 class="panel-title">Friend Requests</h2>
+        <div id="requestsList"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="panel" id="panel-chat" style="display:none;">
+        <h2 class="panel-title">Chat</h2>
+        <div class="chat-layout">
+          <div class="chat-list" id="chatFriendList"></div>
+          <div class="chat-thread" id="chatThreadWrap">
+            <div class="chat-placeholder">Select a friend to start chatting</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="panel" id="panel-profile" style="display:none;">
+        <h2 class="panel-title">My Profile</h2>
+        <div class="profile-card">
+          <img class="avatar avatar-lg" id="profAvatar" src="">
+          <h3 id="profName">—</h3>
+          <p style="color:#a08c66; font-size:13px; margin:6px 0 18px;" id="profEmail">—</p>
+          <div class="field" style="text-align:left;">
+            <label>Bio</label>
+            <textarea id="profBio" rows="3" placeholder="Tell the samaj about yourself..."></textarea>
+          </div>
+          <button class="btn btn-primary" id="saveProfileBtn" style="margin-top:10px;">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   1) PASTE YOUR SUPABASE PROJECT URL + ANON KEY HERE
+   Get these from: Supabase Dashboard → Project Settings → API
+===================================================================== */
+const SUPABASE_URL = "https://vffnygebcscupjnnflvd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZm55Z2ViY3NjdXBqbm5mbHZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4MDg0OTgsImV4cCI6MjEwMjM4NDQ5OH0.vPX_x3Kxb0tJLfyGwlaCO-gQwo_N-jpJI7ocW6YgtyE"; 
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;   // { id, email }
+let currentProfile = null; // { id, name, bio, avatar_url }
+let selectedChatFriend = null;
+let chatChannel = null;
+let feedChannel = null;
+let reqChannel = null;
+let mediaFile = null;
+
+/* ---------------- AUTH UI TOGGLES ---------------- */
+document.getElementById('switchToSignup').onclick = () => {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('signupForm').style.display = 'block';
+  document.getElementById('switchToSignup').style.display = 'none';
+  document.getElementById('switchToLogin').style.display = 'block';
+};
+document.getElementById('switchToLogin').onclick = () => {
+  document.getElementById('signupForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('switchToLogin').style.display = 'none';
+  document.getElementById('switchToSignup').style.display = 'block';
+};
+function showAuthError(msg){
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const { data, error } = await sb.auth.signUp({
+    email, password, options: { data: { name } }
+  });
+  if(error){ showAuthError(error.message); return; }
+  if(data.user && !data.session){
+    showAuthError('Account created! Check your email to confirm, then log in.');
+  }
+});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if(error) showAuthError(error.message);
+});
+
+document.getElementById('logoutBtn').onclick = async () => {
+  await sb.auth.signOut();
+  location.reload();
+};
+
+/* ---------------- AUTH STATE ---------------- */
+sb.auth.onAuthStateChange(async (event, session) => {
+  if(session && session.user){
+    currentUser = session.user;
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentProfile = profile;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    renderSidebarProfile();
+    loadFeed();
+    loadRequests();
+    loadFriendListForChat();
+  } else {
+    currentUser = null; currentProfile = null;
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+  }
+});
+
+function renderSidebarProfile(){
+  document.getElementById('sideName').textContent = currentProfile.name || 'Member';
+  document.getElementById('sideAvatar').src = currentProfile.avatar_url || defaultAvatar(currentProfile.name);
+  document.getElementById('profName').textContent = currentProfile.name || 'Member';
+  document.getElementById('profEmail').textContent = currentUser.email || '';
+  document.getElementById('profAvatar').src = currentProfile.avatar_url || defaultAvatar(currentProfile.name);
+  document.getElementById('profBio').value = currentProfile.bio || '';
+}
+function defaultAvatar(name){
+  const initial = (name||'A').charAt(0).toUpperCase();
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(initial)}&backgroundColor=E3A33B&textColor=1F2A52`;
+}
+
+/* ---------------- NAV ---------------- */
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+    document.getElementById('panel-' + item.dataset.panel).style.display = 'block';
+  });
+});
+
+/* ---------------- PROFILE SAVE ---------------- */
+document.getElementById('saveProfileBtn').onclick = async () => {
+  const bio = document.getElementById('profBio').value.trim();
+  const { error } = await sb.from('profiles').update({ bio }).eq('id', currentUser.id);
+  if(error){ alert('Error saving: ' + error.message); return; }
+  currentProfile.bio = bio;
+  alert('Profile updated!');
+};
+
+/* ---------------- FEED: POST COMPOSER ---------------- */
+document.getElementById('mediaInput').addEventListener('change', (e) => {
+  mediaFile = e.target.files[0];
+  const wrap = document.getElementById('mediaPreviewWrap');
+  wrap.innerHTML = '';
+  if(mediaFile){
+    const url = URL.createObjectURL(mediaFile);
+    if(mediaFile.type.startsWith('video')){
+      wrap.innerHTML = `<video src="${url}" class="preview-media" controls></video>`;
+    } else {
+      wrap.innerHTML = `<img src="${url}" class="preview-media">`;
+    }
+  }
+});
+
+document.getElementById('postBtn').onclick = async () => {
+  const caption = document.getElementById('postCaption').value.trim();
+  if(!caption && !mediaFile){ alert('Write something or attach a photo/video first.'); return; }
+  const btn = document.getElementById('postBtn');
+  btn.disabled = true; btn.textContent = 'Posting...';
+  try{
+    let mediaUrl = '', mediaType = '';
+    if(mediaFile){
+      mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
+      const path = `${currentUser.id}/${Date.now()}_${mediaFile.name}`;
+      const { error: upErr } = await sb.storage.from('posts').upload(path, mediaFile);
+      if(upErr) throw upErr;
+      const { data: urlData } = sb.storage.from('posts').getPublicUrl(path);
+      mediaUrl = urlData.publicUrl;
+    }
+    const { error } = await sb.from('posts').insert({
+      author_id: currentUser.id, caption, media_url: mediaUrl, media_type: mediaType
+    });
+    if(error) throw error;
+    document.getElementById('postCaption').value = '';
+    document.getElementById('mediaPreviewWrap').innerHTML = '';
+    document.getElementById('mediaInput').value = '';
+    mediaFile = null;
+    loadFeed();
+  }catch(err){ alert('Error posting: ' + err.message); }
+  btn.disabled = false; btn.textContent = 'Post';
+};
+
+/* ---------------- FEED: LOAD (RLS already limits to self + friends) ---------------- */
+async function loadFeed(){
+  const listEl = document.getElementById('feedList');
+
+  const { data: posts, error } = await sb
+    .from('posts')
+    .select('*, profiles:author_id ( name, avatar_url )')
+    .order('created_at', { ascending: false });
+
+  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load feed: ${error.message}</div>`; return; }
+
+  renderFeed(posts);
+
+  // Live updates: refresh when a new post you're allowed to see arrives
+  if(feedChannel) sb.removeChannel(feedChannel);
+  feedChannel = sb.channel('public:posts')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
+    .subscribe();
+}
+
+function renderFeed(posts){
+  const listEl = document.getElementById('feedList');
+  if(!posts || posts.length === 0){
+    listEl.innerHTML = `<div class="empty-state"><div class="big">🦚</div>No posts yet. Add friends or share something!</div>`;
+    return;
+  }
+  listEl.innerHTML = '';
+  posts.forEach(p => {
+    const author = p.profiles || {};
+    const time = new Date(p.created_at).toLocaleString();
+    let mediaHtml = '';
+    if(p.media_url){
+      mediaHtml = p.media_type === 'video'
+        ? `<video src="${p.media_url}" class="post-media" controls></video>`
+        : `<img src="${p.media_url}" class="post-media">`;
+    }
+    listEl.innerHTML += `
+      <div class="post-card">
+        <div class="post-head">
+          <img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}">
+          <div><div class="name">${escapeHtml(author.name || 'Member')}</div><div class="time">${time}</div></div>
+        </div>
+        ${p.caption ? `<div class="post-caption">${escapeHtml(p.caption)}</div>` : ''}
+        ${mediaHtml}
+      </div>`;
+  });
+}
+
+/* ---------------- FIND FRIENDS: SEARCH ---------------- */
+let searchTimeout;
+document.getElementById('userSearch').addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => searchUsers(e.target.value.trim()), 350);
+});
+
+async function searchUsers(term){
+  const resultsEl = document.getElementById('friendSearchResults');
+  if(!term){ resultsEl.innerHTML = ''; return; }
+
+  const [{ data: matches }, { data: friends }, { data: sent }, { data: received }] = await Promise.all([
+    sb.from('profiles').select('id, name, avatar_url').ilike('name', `%${term}%`).neq('id', currentUser.id).limit(20),
+    sb.from('friendships').select('friend_id').eq('user_id', currentUser.id),
+    sb.from('friend_requests').select('to_id').eq('from_id', currentUser.id).eq('status', 'pending'),
+    sb.from('friend_requests').select('from_id').eq('to_id', currentUser.id).eq('status', 'pending')
+  ]);
+
+  const friendIds = new Set((friends||[]).map(f => f.friend_id));
+  const sentIds = new Set((sent||[]).map(r => r.to_id));
+  const receivedIds = new Set((received||[]).map(r => r.from_id));
+
+  resultsEl.innerHTML = '';
+  (matches||[]).forEach(u => {
+    let actionHtml = `<button class="small-btn btn-add" onclick="sendFriendRequest('${u.id}')">Add Friend</button>`;
+    if(friendIds.has(u.id)) actionHtml = `<span class="tag-pending">✓ Friends</span>`;
+    else if(sentIds.has(u.id)) actionHtml = `<span class="tag-pending">Request sent</span>`;
+    else if(receivedIds.has(u.id)) actionHtml = `<span class="tag-pending">Check Requests tab</span>`;
+    resultsEl.innerHTML += `
+      <div class="user-row">
+        <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}">
+        <div class="name">${escapeHtml(u.name)}</div>
+        ${actionHtml}
+      </div>`;
+  });
+  if(!resultsEl.innerHTML) resultsEl.innerHTML = `<div class="empty-state">No members found matching "${escapeHtml(term)}"</div>`;
+}
+
+async function sendFriendRequest(toId){
+  const { error } = await sb.from('friend_requests').insert({ from_id: currentUser.id, to_id: toId });
+  if(error){ alert(error.message); return; }
+  searchUsers(document.getElementById('userSearch').value.trim());
+}
+
+/* ---------------- REQUESTS ---------------- */
+async function loadRequests(){
+  const { data: reqs, error } = await sb
+    .from('friend_requests')
+    .select('id, from_id, profiles:from_id ( name, avatar_url )')
+    .eq('to_id', currentUser.id)
+    .eq('status', 'pending');
+
+  const badge = document.getElementById('reqBadge');
+  const listEl = document.getElementById('requestsList');
+
+  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load requests: ${error.message}</div>`; return; }
+
+  if(!reqs || reqs.length === 0){
+    badge.style.display = 'none';
+    listEl.innerHTML = `<div class="empty-state"><div class="big">🤝</div>No pending requests right now.</div>`;
+  } else {
+    badge.style.display = 'inline'; badge.textContent = reqs.length;
+    listEl.innerHTML = '';
+    reqs.forEach(r => {
+      const fromUser = r.profiles || {};
+      listEl.innerHTML += `
+        <div class="user-row">
+          <img class="avatar" src="${fromUser.avatar_url || defaultAvatar(fromUser.name)}">
+          <div class="name">${escapeHtml(fromUser.name || 'Member')}</div>
+          <button class="small-btn btn-accept" onclick="respondRequest('${r.id}','accept')">Accept</button>
+          <button class="small-btn btn-decline" onclick="respondRequest('${r.id}','decline')">Decline</button>
+        </div>`;
+    });
+  }
+
+  // Live updates for incoming requests
+  if(reqChannel) sb.removeChannel(reqChannel);
+  reqChannel = sb.channel('public:friend_requests')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, () => loadRequests())
+    .subscribe();
+}
+
+async function respondRequest(reqId, action){
+  if(action === 'accept'){
+    const { error } = await sb.rpc('accept_friend_request', { request_id: reqId });
+    if(error){ alert(error.message); return; }
+    loadFeed();
+    loadFriendListForChat();
+  } else {
+    const { error } = await sb.from('friend_requests').update({ status: 'declined' }).eq('id', reqId);
+    if(error){ alert(error.message); return; }
+  }
+  loadRequests();
+}
+
+/* ---------------- CHAT ---------------- */
+async function loadFriendListForChat(){
+  const { data: friends, error } = await sb
+    .from('friendships')
+    .select('friend_id, profiles:friend_id ( name, avatar_url )')
+    .eq('user_id', currentUser.id);
+
+  const listEl = document.getElementById('chatFriendList');
+  if(error){ listEl.innerHTML = `<div style="padding:16px; font-size:12px;">Error: ${error.message}</div>`; return; }
+  if(!friends || friends.length === 0){
+    listEl.innerHTML = `<div style="padding:16px; font-size:12px; color:#a08c66;">No friends yet. Add some first!</div>`;
+    return;
+  }
+  listEl.innerHTML = '';
+  friends.forEach(f => {
+    const u = f.profiles || {};
+    const item = document.createElement('div');
+    item.className = 'chat-list-item';
+    item.innerHTML = `<img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}"><span style="font-size:13px; font-weight:500;">${escapeHtml(u.name||'Member')}</span>`;
+    item.onclick = () => openChat(f.friend_id, u.name, item);
+    listEl.appendChild(item);
+  });
+}
+
+function chatIdFor(uidA, uidB){ return [uidA, uidB].sort().join('_'); }
+
+async function openChat(friendId, friendName, itemEl){
+  selectedChatFriend = friendId;
+  document.querySelectorAll('.chat-list-item').forEach(i => i.classList.remove('active'));
+  if(itemEl) itemEl.classList.add('active');
+
+  const wrap = document.getElementById('chatThreadWrap');
+  wrap.innerHTML = `
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Message ${escapeHtml(friendName||'')}...">
+      <button class="btn btn-primary" id="chatSendBtn">Send</button>
+    </div>`;
+
+  const cid = chatIdFor(currentUser.id, friendId);
+
+  async function refreshMessages(){
+    const { data: msgs } = await sb
+      .from('messages').select('*').eq('chat_id', cid).order('created_at', { ascending: true });
+    const msgsEl = document.getElementById('chatMessages');
+    if(!msgsEl) return;
+    msgsEl.innerHTML = '';
+    (msgs||[]).forEach(m => {
+      const mine = m.sender_id === currentUser.id;
+      msgsEl.innerHTML += `<div class="msg-bubble ${mine?'msg-mine':'msg-theirs'}">${escapeHtml(m.text)}</div>`;
+    });
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+  await refreshMessages();
+
+  if(chatChannel) sb.removeChannel(chatChannel);
+  chatChannel = sb.channel('room:' + cid)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${cid}` }, () => refreshMessages())
+    .subscribe();
+
+  document.getElementById('chatSendBtn').onclick = sendChatMessage;
+  document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendChatMessage(); });
+}
+
+async function sendChatMessage(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text || !selectedChatFriend) return;
+  const cid = chatIdFor(currentUser.id, selectedChatFriend);
+  input.value = '';
+  const { error } = await sb.from('messages').insert({
+    chat_id: cid, sender_id: currentUser.id, recipient_id: selectedChatFriend, text
+  });
+  if(error) alert(error.message);
+}
+
+/* ---------------- UTIL ---------------- */
+function escapeHtml(str){
+  return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+</script>
+</body>
+</html>
