@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat — AhirConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+<div class="feather-bg"></div>
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <div class="main-panel">
+    <h2 class="panel-title">Chat</h2>
+    <div class="chat-layout">
+      <div class="chat-list" id="chatFriendList"></div>
+      <div class="chat-thread" id="chatThreadWrap">
+        <div class="chat-placeholder">Select a friend to start chatting</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared/config.js"></script>
+<script src="shared/utils.js"></script>
+<script>
+let currentUser, currentProfile, selectedChatFriend = null, chatChannel = null;
+
+(async () => {
+  const ctx = await requireAuth();
+  if(!ctx) return;
+  currentUser = ctx.user; currentProfile = ctx.profile;
+  renderSidebar('chat', currentUser, currentProfile);
+  loadFriendListForChat();
+
+  // Open a specific friend's chat directly via chat.html?with=<friend_id>
+  const params = new URLSearchParams(window.location.search);
+  const withId = params.get('with');
+  if(withId) openChat(withId, null, null);
+})();
+
+async function loadFriendListForChat(){
+  const { data: friends, error } = await sb
+    .from('friendships')
+    .select('friend_id, profiles:friend_id ( name, avatar_url )')
+    .eq('user_id', currentUser.id);
+
+  const listEl = document.getElementById('chatFriendList');
+  if(error){ listEl.innerHTML = `<div style="padding:16px; font-size:12px;">Error: ${error.message}</div>`; return; }
+  if(!friends || friends.length === 0){
+    listEl.innerHTML = `<div style="padding:16px; font-size:12px; color:#a08c66;">No friends yet. Add some first!</div>`;
+    return;
+  }
+  listEl.innerHTML = '';
+  friends.forEach(f => {
+    const u = f.profiles || {};
+    const item = document.createElement('div');
+    item.className = 'chat-list-item';
+    item.dataset.friendId = f.friend_id;
+    item.innerHTML = `<img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}"><span style="font-size:13px; font-weight:500;">${escapeHtml(u.name||'Member')}</span>`;
+    item.onclick = () => openChat(f.friend_id, u.name, item);
+    listEl.appendChild(item);
+  });
+}
+
+async function openChat(friendId, friendName, itemEl){
+  selectedChatFriend = friendId;
+  document.querySelectorAll('.chat-list-item').forEach(i => i.classList.remove('active'));
+  if(itemEl){
+    itemEl.classList.add('active');
+  } else {
+    // Opened via URL param — find and highlight the matching list item, and get their name
+    const match = document.querySelector(`.chat-list-item[data-friend-id="${friendId}"]`);
+    if(match){ match.classList.add('active'); friendName = match.querySelector('span').textContent; }
+  }
+
+  const wrap = document.getElementById('chatThreadWrap');
+  wrap.innerHTML = `
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Message ${escapeHtml(friendName||'')}...">
+      <button class="btn btn-primary" id="chatSendBtn">Send</button>
+    </div>`;
+
+  const cid = chatIdFor(currentUser.id, friendId);
+
+  async function refreshMessages(){
+    const { data: msgs } = await sb
+      .from('messages').select('*').eq('chat_id', cid).order('created_at', { ascending: true });
+    const msgsEl = document.getElementById('chatMessages');
+    if(!msgsEl) return;
+    msgsEl.innerHTML = '';
+    (msgs||[]).forEach(m => {
+      const mine = m.sender_id === currentUser.id;
+      msgsEl.innerHTML += `<div class="msg-bubble ${mine?'msg-mine':'msg-theirs'}">${escapeHtml(m.text)}</div>`;
+    });
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+  await refreshMessages();
+
+  if(chatChannel) sb.removeChannel(chatChannel);
+  chatChannel = sb.channel('room:' + cid)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${cid}` }, () => refreshMessages())
+    .subscribe();
+
+  document.getElementById('chatSendBtn').onclick = sendChatMessage;
+  document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendChatMessage(); });
+}
+
+async function sendChatMessage(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text || !selectedChatFriend) return;
+  const cid = chatIdFor(currentUser.id, selectedChatFriend);
+  input.value = '';
+  const { error } = await sb.from('messages').insert({
+    chat_id: cid, sender_id: currentUser.id, recipient_id: selectedChatFriend, text
+  });
+  if(error) alert(error.message);
+}
+</script>
+</body>
+</html>

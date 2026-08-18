@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Requests — AhirConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+<div class="feather-bg"></div>
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <div class="main-panel">
+    <h2 class="panel-title">Friend Requests</h2>
+    <div id="requestsList"></div>
+  </div>
+</div>
+
+<script src="shared/config.js"></script>
+<script src="shared/utils.js"></script>
+<script>
+let currentUser, currentProfile, reqChannel = null;
+
+(async () => {
+  const ctx = await requireAuth();
+  if(!ctx) return;
+  currentUser = ctx.user; currentProfile = ctx.profile;
+  renderSidebar('requests', currentUser, currentProfile);
+  loadRequests();
+})();
+
+async function loadRequests(){
+  const { data: reqs, error } = await sb
+    .from('friend_requests')
+    .select('id, from_id, profiles:from_id ( name, avatar_url )')
+    .eq('to_id', currentUser.id)
+    .eq('status', 'pending');
+
+  const listEl = document.getElementById('requestsList');
+  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load requests: ${error.message}</div>`; return; }
+
+  if(!reqs || reqs.length === 0){
+    listEl.innerHTML = `<div class="empty-state"><div class="big">🤝</div>No pending requests right now.</div>`;
+  } else {
+    listEl.innerHTML = '';
+    reqs.forEach(r => {
+      const fromUser = r.profiles || {};
+      listEl.innerHTML += `
+        <div class="user-row">
+          <img class="avatar" src="${fromUser.avatar_url || defaultAvatar(fromUser.name)}">
+          <div class="name">${escapeHtml(fromUser.name || 'Member')}</div>
+          <button class="small-btn btn-accept" onclick="respondRequest('${r.id}','accept')">Accept</button>
+          <button class="small-btn btn-decline" onclick="respondRequest('${r.id}','decline')">Decline</button>
+        </div>`;
+    });
+  }
+
+  refreshRequestBadge(currentUser.id);
+
+  if(reqChannel) sb.removeChannel(reqChannel);
+  reqChannel = sb.channel('public:friend_requests')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, () => loadRequests())
+    .subscribe();
+}
+
+async function respondRequest(reqId, action){
+  if(action === 'accept'){
+    const { error } = await sb.rpc('accept_friend_request', { request_id: reqId });
+    if(error){ alert(error.message); return; }
+  } else {
+    const { error } = await sb.from('friend_requests').update({ status: 'declined' }).eq('id', reqId);
+    if(error){ alert(error.message); return; }
+  }
+  loadRequests();
+}
+</script>
+</body>
+</html>

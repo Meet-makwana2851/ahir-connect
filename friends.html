@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Friends — AhirConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+<div class="feather-bg"></div>
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <div class="main-panel">
+    <h2 class="panel-title">Find Friends</h2>
+    <div class="search-row"><input type="text" id="userSearch" placeholder="Search by name..."></div>
+    <div id="friendSearchResults"></div>
+  </div>
+</div>
+
+<script src="shared/config.js"></script>
+<script src="shared/utils.js"></script>
+<script>
+let currentUser, currentProfile;
+
+(async () => {
+  const ctx = await requireAuth();
+  if(!ctx) return;
+  currentUser = ctx.user; currentProfile = ctx.profile;
+  renderSidebar('friends', currentUser, currentProfile);
+})();
+
+let searchTimeout;
+document.getElementById('userSearch').addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => searchUsers(e.target.value.trim()), 350);
+});
+
+async function searchUsers(term){
+  const resultsEl = document.getElementById('friendSearchResults');
+  if(!term){ resultsEl.innerHTML = ''; return; }
+
+  const [{ data: matches }, { data: friends }, { data: sent }, { data: received }] = await Promise.all([
+    sb.from('profiles').select('id, name, avatar_url').ilike('name', `%${term}%`).neq('id', currentUser.id).limit(20),
+    sb.from('friendships').select('friend_id').eq('user_id', currentUser.id),
+    sb.from('friend_requests').select('to_id').eq('from_id', currentUser.id).eq('status', 'pending'),
+    sb.from('friend_requests').select('from_id').eq('to_id', currentUser.id).eq('status', 'pending')
+  ]);
+
+  const friendIds = new Set((friends||[]).map(f => f.friend_id));
+  const sentIds = new Set((sent||[]).map(r => r.to_id));
+  const receivedIds = new Set((received||[]).map(r => r.from_id));
+
+  resultsEl.innerHTML = '';
+  (matches||[]).forEach(u => {
+    let actionHtml = `<button class="small-btn btn-add" onclick="sendFriendRequest('${u.id}')">Add Friend</button>`;
+    if(friendIds.has(u.id)) actionHtml = `<span class="tag-pending">✓ Friends</span>`;
+    else if(sentIds.has(u.id)) actionHtml = `<span class="tag-pending">Request sent</span>`;
+    else if(receivedIds.has(u.id)) actionHtml = `<span class="tag-pending">Check Requests tab</span>`;
+    resultsEl.innerHTML += `
+      <div class="user-row">
+        <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}">
+        <div class="name">${escapeHtml(u.name)}</div>
+        ${actionHtml}
+      </div>`;
+  });
+  if(!resultsEl.innerHTML) resultsEl.innerHTML = `<div class="empty-state">No members found matching "${escapeHtml(term)}"</div>`;
+}
+
+async function sendFriendRequest(toId){
+  const { error } = await sb.from('friend_requests').insert({ from_id: currentUser.id, to_id: toId });
+  if(error){ alert(error.message); return; }
+  searchUsers(document.getElementById('userSearch').value.trim());
+}
+</script>
+</body>
+</html>

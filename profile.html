@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — AhirConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+<div class="feather-bg"></div>
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <div class="main-panel">
+    <h2 class="panel-title">My Profile</h2>
+    <div class="profile-card">
+      <img class="avatar avatar-lg" id="profAvatar" src="">
+      <h3 id="profName">—</h3>
+      <p style="color:#a08c66; font-size:13px; margin:6px 0 18px;" id="profEmail">—</p>
+      <div class="field" style="text-align:left;">
+        <label>Bio</label>
+        <textarea id="profBio" rows="3" placeholder="Tell the samaj about yourself..."></textarea>
+      </div>
+      <button class="btn btn-primary" id="saveProfileBtn" style="margin-top:10px;">Save Changes</button>
+
+      <div class="danger-zone">
+        <h4>Danger Zone</h4>
+        <button class="btn btn-danger" id="deleteAccountBtn">Delete My Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared/config.js"></script>
+<script src="shared/utils.js"></script>
+<script>
+let currentUser, currentProfile;
+
+(async () => {
+  const ctx = await requireAuth();
+  if(!ctx) return;
+  currentUser = ctx.user; currentProfile = ctx.profile;
+  renderSidebar('profile', currentUser, currentProfile);
+
+  document.getElementById('profName').textContent = currentProfile.name || 'Member';
+  document.getElementById('profEmail').textContent = currentUser.email || '';
+  document.getElementById('profAvatar').src = currentProfile.avatar_url || defaultAvatar(currentProfile.name);
+  document.getElementById('profBio').value = currentProfile.bio || '';
+})();
+
+document.getElementById('saveProfileBtn').onclick = async () => {
+  const bio = document.getElementById('profBio').value.trim();
+  const { error } = await sb.from('profiles').update({ bio }).eq('id', currentUser.id);
+  if(error){ alert('Error saving: ' + error.message); return; }
+  alert('Profile updated!');
+};
+
+// Requires the optional "delete-account" Edge Function — see SETUP-GUIDE for the 5-minute setup.
+// Until that's deployed, this will show a clear message instead of failing silently.
+document.getElementById('deleteAccountBtn').onclick = async () => {
+  if(!confirm('This permanently deletes your account, posts, friendships, and messages. This cannot be undone. Continue?')) return;
+  const { data: { session } } = await sb.auth.getSession();
+  try{
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+    if(!res.ok) throw new Error(await res.text());
+    await sb.auth.signOut();
+    alert('Your account has been deleted.');
+    window.location.href = 'login.html';
+  }catch(err){
+    alert('Account deletion isn\'t set up yet — see "Optional: self-serve account deletion" in the setup guide to enable this button. (' + err.message + ')');
+  }
+};
+</script>
+</body>
+</html>

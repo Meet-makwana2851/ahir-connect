@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed — AhirConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+<div class="feather-bg"></div>
+<div class="app-shell">
+  <div id="sidebarMount"></div>
+
+  <div class="main-panel">
+    <h2 class="panel-title">Community Feed</h2>
+    <div class="composer">
+      <textarea id="postCaption" placeholder="Share something with your friends..."></textarea>
+      <div id="mediaPreviewWrap"></div>
+      <div class="composer-actions">
+        <label class="file-label">📷 Photo / Video<input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;"></label>
+        <button class="btn btn-primary post-btn" id="postBtn">Post</button>
+      </div>
+    </div>
+    <div id="feedList"></div>
+  </div>
+</div>
+
+<script src="shared/config.js"></script>
+<script src="shared/utils.js"></script>
+<script>
+let currentUser, currentProfile, mediaFile = null, feedChannel = null;
+
+(async () => {
+  const ctx = await requireAuth();
+  if(!ctx) return;
+  currentUser = ctx.user; currentProfile = ctx.profile;
+  renderSidebar('home', currentUser, currentProfile);
+  loadFeed();
+})();
+
+document.getElementById('mediaInput').addEventListener('change', (e) => {
+  mediaFile = e.target.files[0];
+  const wrap = document.getElementById('mediaPreviewWrap');
+  wrap.innerHTML = '';
+  if(mediaFile){
+    const url = URL.createObjectURL(mediaFile);
+    wrap.innerHTML = mediaFile.type.startsWith('video')
+      ? `<video src="${url}" class="preview-media" controls></video>`
+      : `<img src="${url}" class="preview-media">`;
+  }
+});
+
+document.getElementById('postBtn').onclick = async () => {
+  const caption = document.getElementById('postCaption').value.trim();
+  if(!caption && !mediaFile){ alert('Write something or attach a photo/video first.'); return; }
+  const btn = document.getElementById('postBtn');
+  btn.disabled = true; btn.textContent = 'Posting...';
+  try{
+    let mediaUrl = '', mediaType = '';
+    if(mediaFile){
+      mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
+      const path = `${currentUser.id}/${Date.now()}_${mediaFile.name}`;
+      const { error: upErr } = await sb.storage.from('posts').upload(path, mediaFile);
+      if(upErr) throw upErr;
+      const { data: urlData } = sb.storage.from('posts').getPublicUrl(path);
+      mediaUrl = urlData.publicUrl;
+    }
+    const { error } = await sb.from('posts').insert({
+      author_id: currentUser.id, caption, media_url: mediaUrl, media_type: mediaType
+    });
+    if(error) throw error;
+    document.getElementById('postCaption').value = '';
+    document.getElementById('mediaPreviewWrap').innerHTML = '';
+    document.getElementById('mediaInput').value = '';
+    mediaFile = null;
+    loadFeed();
+  }catch(err){ alert('Error posting: ' + err.message); }
+  btn.disabled = false; btn.textContent = 'Post';
+};
+
+async function loadFeed(){
+  const listEl = document.getElementById('feedList');
+  const { data: posts, error } = await sb
+    .from('posts')
+    .select('*, profiles:author_id ( name, avatar_url )')
+    .order('created_at', { ascending: false });
+
+  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load feed: ${error.message}</div>`; return; }
+  renderFeed(posts);
+
+  if(feedChannel) sb.removeChannel(feedChannel);
+  feedChannel = sb.channel('public:posts')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
+    .subscribe();
+}
+
+function renderFeed(posts){
+  const listEl = document.getElementById('feedList');
+  if(!posts || posts.length === 0){
+    listEl.innerHTML = `<div class="empty-state"><div class="big">🦚</div>No posts yet. Add friends or share something!</div>`;
+    return;
+  }
+  listEl.innerHTML = '';
+  posts.forEach(p => {
+    const author = p.profiles || {};
+    const time = new Date(p.created_at).toLocaleString();
+    let mediaHtml = '';
+    if(p.media_url){
+      mediaHtml = p.media_type === 'video'
+        ? `<video src="${p.media_url}" class="post-media" controls></video>`
+        : `<img src="${p.media_url}" class="post-media">`;
+    }
+    listEl.innerHTML += `
+      <div class="post-card">
+        <div class="post-head">
+          <img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}">
+          <div><div class="name">${escapeHtml(author.name || 'Member')}</div><div class="time">${time}</div></div>
+        </div>
+        ${p.caption ? `<div class="post-caption">${escapeHtml(p.caption)}</div>` : ''}
+        ${mediaHtml}
+      </div>`;
+  });
+}
+</script>
+</body>
+</html>
