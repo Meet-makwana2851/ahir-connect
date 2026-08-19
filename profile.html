@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profile — AhirConnect</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
+<script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
 <div class="feather-bg"></div>
@@ -16,21 +16,26 @@
 
   <div class="main-panel">
     <h2 class="panel-title">My Profile</h2>
-    <div class="profile-card">
-      <img class="avatar avatar-lg" id="profAvatar" src="">
-      <h3 id="profName">—</h3>
-      <p style="color:#a08c66; font-size:13px; margin:6px 0 18px;" id="profEmail">—</p>
-      <div class="field" style="text-align:left;">
-        <label>Bio</label>
-        <textarea id="profBio" rows="3" placeholder="Tell the samaj about yourself..."></textarea>
-      </div>
-      <button class="btn btn-primary" id="saveProfileBtn" style="margin-top:10px;">Save Changes</button>
 
-      <div class="danger-zone">
-        <h4>Danger Zone</h4>
-        <button class="btn btn-danger" id="deleteAccountBtn">Delete My Account</button>
+    <!-- Profile card -->
+    <div class="profile-card" style="margin-bottom:16px;">
+      <img class="avatar avatar-lg" id="profAvatar" src="">
+      <h3 id="profName" style="margin-top:10px; font-size:18px;">—</h3>
+      <p style="color:var(--text-3); font-size:13px; margin:4px 0 0;" id="profEmail">—</p>
+    </div>
+
+    <!-- Account Settings card -->
+    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); margin-bottom:16px; overflow:hidden;">
+      <div class="settings-section-header">Account</div>
+      <div style="padding:16px 20px;">
+        <div class="field">
+          <label>Bio</label>
+          <textarea id="profBio" rows="3" placeholder="Tell the samaj about yourself..."></textarea>
+        </div>
+        <button class="btn btn-primary" id="saveProfileBtn" style="margin-top:4px;">Save Changes</button>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -58,24 +63,6 @@ document.getElementById('saveProfileBtn').onclick = async () => {
   alert('Profile updated!');
 };
 
-// Requires the optional "delete-account" Edge Function — see SETUP-GUIDE for the 5-minute setup.
-// Until that's deployed, this will show a clear message instead of failing silently.
-document.getElementById('deleteAccountBtn').onclick = async () => {
-  if(!confirm('This permanently deletes your account, posts, friendships, and messages. This cannot be undone. Continue?')) return;
-  const { data: { session } } = await sb.auth.getSession();
-  try{
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${session.access_token}` }
-    });
-    if(!res.ok) throw new Error(await res.text());
-    await sb.auth.signOut();
-    alert('Your account has been deleted.');
-    window.location.href = 'login.html';
-  }catch(err){
-    alert('Account deletion isn\'t set up yet — see "Optional: self-serve account deletion" in the setup guide to enable this button. (' + err.message + ')');
-  }
-};
 </script>
 </body>
 </html>

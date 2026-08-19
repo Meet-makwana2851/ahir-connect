@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat — AhirConnect</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>Messages — AhirConnect</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
+<script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
 <div class="feather-bg"></div>
@@ -15,7 +15,7 @@
   <div id="sidebarMount"></div>
 
   <div class="main-panel">
-    <h2 class="panel-title">Chat</h2>
+    <h2 class="panel-title">Messages</h2>
     <div class="chat-layout">
       <div class="chat-list" id="chatFriendList"></div>
       <div class="chat-thread" id="chatThreadWrap">
@@ -35,6 +35,7 @@ let currentUser, currentProfile, selectedChatFriend = null, chatChannel = null;
   if(!ctx) return;
   currentUser = ctx.user; currentProfile = ctx.profile;
   renderSidebar('chat', currentUser, currentProfile);
+  markChatSeen(currentUser.id);   // clear red dot when chat is opened
   loadFriendListForChat();
 
   // Open a specific friend's chat directly via chat.html?with=<friend_id>
