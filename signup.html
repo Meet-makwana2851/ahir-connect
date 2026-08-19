@@ -4,64 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign Up — AhirConnect</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
 <script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
-<div class="feather-bg"></div>
 <div class="auth-wrap">
   <div class="auth-card">
     <div class="brand-row"><span class="brand">Ahir<span>Connect</span></span></div>
-    <div class="tagline">Jai Shree Krishna 🦚 — Connecting the Ahir Samaj, everywhere.</div>
+    <div class="tagline">Sign up to see posts and messages from your community.</div>
     <div class="error-msg" id="authError"></div>
-    <div class="info-msg" id="authInfo"></div>
+    <div class="success-msg" id="authSuccess"></div>
 
     <form id="signupForm">
-      <div class="field"><label>Full Name</label><input type="text" id="signupName" required></div>
-      <div class="field"><label>Email</label><input type="email" id="signupEmail" required></div>
-      <div class="field"><label>Password</label><input type="password" id="signupPassword" minlength="6" required></div>
-      <button class="btn btn-primary" type="submit" id="signupBtn">Create Account</button>
+      <div class="field"><label>Full Name</label><input type="text" id="signupName" required placeholder="Full Name"></div>
+      <div class="field"><label>Email</label><input type="email" id="signupEmail" required placeholder="Email"></div>
+      <div class="field"><label>Password</label><input type="password" id="signupPassword" required minlength="6" placeholder="Password"></div>
+      <button class="btn btn-primary" type="submit" id="signupBtn" style="margin-top:6px;">Sign up</button>
     </form>
 
-    <div class="switch-auth">Already a member? <a href="login.html">Log in</a></div>
+    <div class="or-divider">OR</div>
+
+    <div class="switch-auth">Have an account? <a href="login.html">Log in</a></div>
   </div>
 </div>
 
 <script src="shared/config.js"></script>
 <script>
-sb.auth.getSession().then(({ data: { session } }) => {
-  if(session) window.location.href = 'home.html';
-});
-
-function showAuthError(msg){
-  const el = document.getElementById('authError');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('authInfo').style.display = 'none';
-}
-function showAuthInfo(msg){
-  const el = document.getElementById('authInfo');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('authError').style.display = 'none';
-}
-
 document.getElementById('signupForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const errEl = document.getElementById('authError');
+  const sucEl = document.getElementById('authSuccess');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
   const btn = document.getElementById('signupBtn');
   btn.disabled = true; btn.textContent = 'Creating account...';
+
   const name = document.getElementById('signupName').value.trim();
-  const email = document.getElementById('signupEmail').value.trim();
-  const password = document.getElementById('signupPassword').value;
+  const { error } = await sb.auth.signUp({
+    email: document.getElementById('signupEmail').value.trim(),
+    password: document.getElementById('signupPassword').value,
+    options: { data: { name } }
+  });
 
-  const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
-  btn.disabled = false; btn.textContent = 'Create Account';
-
-  if(error){ showAuthError(error.message); return; }
-  if(data.session){
-    window.location.href = 'home.html';
+  if(error){
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign up';
   } else {
-    showAuthInfo('Account created! Check your email to confirm, then log in.');
+    sucEl.textContent = 'Account created! Check your email to confirm, then log in.';
+    sucEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign up';
   }
 });
 </script>

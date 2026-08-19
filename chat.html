@@ -4,23 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Messages — AhirConnect</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
 <script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
-<div class="feather-bg"></div>
 <div class="app-shell">
   <div id="sidebarMount"></div>
 
-  <div class="main-panel">
-    <h2 class="panel-title">Messages</h2>
+  <div class="main-panel main-panel-wide">
     <div class="chat-layout">
-      <div class="chat-list" id="chatFriendList"></div>
-      <div class="chat-thread" id="chatThreadWrap">
-        <div class="chat-placeholder">Select a friend to start chatting</div>
+
+      <!-- Conversation list -->
+      <div class="chat-list">
+        <div class="chat-list-header">
+          <span>Messages</span>
+        </div>
+        <div id="chatFriendList"></div>
       </div>
+
+      <!-- Thread -->
+      <div class="chat-thread" id="chatThreadWrap">
+        <div class="chat-placeholder">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span style="font-size:20px;font-weight:400;color:var(--text);margin-top:8px;">Your messages</span>
+          <span style="color:var(--text-2);font-size:14px;">Send a message to start a conversation.</span>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -34,11 +45,10 @@ let currentUser, currentProfile, selectedChatFriend = null, chatChannel = null;
   const ctx = await requireAuth();
   if(!ctx) return;
   currentUser = ctx.user; currentProfile = ctx.profile;
-  renderSidebar('chat', currentUser, currentProfile);
-  markChatSeen(currentUser.id);   // clear red dot when chat is opened
+  renderSidebar('messages', currentUser, currentProfile);
+  markChatSeen(currentUser.id);
   loadFriendListForChat();
 
-  // Open a specific friend's chat directly via chat.html?with=<friend_id>
   const params = new URLSearchParams(window.location.search);
   const withId = params.get('with');
   if(withId) openChat(withId, null, null);
@@ -51,9 +61,9 @@ async function loadFriendListForChat(){
     .eq('user_id', currentUser.id);
 
   const listEl = document.getElementById('chatFriendList');
-  if(error){ listEl.innerHTML = `<div style="padding:16px; font-size:12px;">Error: ${error.message}</div>`; return; }
+  if(error){ listEl.innerHTML = `<div style="padding:16px;font-size:13px;color:var(--text-2)">Error loading</div>`; return; }
   if(!friends || friends.length === 0){
-    listEl.innerHTML = `<div style="padding:16px; font-size:12px; color:#a08c66;">No friends yet. Add some first!</div>`;
+    listEl.innerHTML = `<div style="padding:20px 16px;font-size:14px;color:var(--text-2)">No conversations yet.</div>`;
     return;
   }
   listEl.innerHTML = '';
@@ -62,7 +72,12 @@ async function loadFriendListForChat(){
     const item = document.createElement('div');
     item.className = 'chat-list-item';
     item.dataset.friendId = f.friend_id;
-    item.innerHTML = `<img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}"><span style="font-size:13px; font-weight:500;">${escapeHtml(u.name||'Member')}</span>`;
+    item.innerHTML = `
+      <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}">
+      <div>
+        <div class="chat-list-name">${escapeHtml(u.name||'Member')}</div>
+        <div class="chat-list-preview">Tap to message</div>
+      </div>`;
     item.onclick = () => openChat(f.friend_id, u.name, item);
     listEl.appendChild(item);
   });
@@ -74,17 +89,20 @@ async function openChat(friendId, friendName, itemEl){
   if(itemEl){
     itemEl.classList.add('active');
   } else {
-    // Opened via URL param — find and highlight the matching list item, and get their name
     const match = document.querySelector(`.chat-list-item[data-friend-id="${friendId}"]`);
-    if(match){ match.classList.add('active'); friendName = match.querySelector('span').textContent; }
+    if(match){ match.classList.add('active'); friendName = match.querySelector('.chat-list-name')?.textContent; }
   }
 
   const wrap = document.getElementById('chatThreadWrap');
   wrap.innerHTML = `
+    <div class="chat-thread-header">
+      <img class="avatar" src="${defaultAvatar(friendName)}">
+      <span>${escapeHtml(friendName||'Friend')}</span>
+    </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-row">
-      <input type="text" id="chatInput" placeholder="Message ${escapeHtml(friendName||'')}...">
-      <button class="btn btn-primary" id="chatSendBtn">Send</button>
+      <input type="text" id="chatInput" placeholder="Message...">
+      <button id="chatSendBtn">Send</button>
     </div>`;
 
   const cid = chatIdFor(currentUser.id, friendId);

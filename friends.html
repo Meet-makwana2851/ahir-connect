@@ -3,21 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Find Friends — AhirConnect</title>
-
+<title>Search — AhirConnect</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
 <script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
-<div class="feather-bg"></div>
 <div class="app-shell">
   <div id="sidebarMount"></div>
 
-  <div class="main-panel">
-    <h2 class="panel-title">Find Friends</h2>
-    <div class="search-row"><input type="text" id="userSearch" placeholder="Search by name..."></div>
-    <div id="friendSearchResults"></div>
+  <div class="main-panel main-panel-wide">
+
+    <!-- Search bar -->
+    <div class="search-page-bar">
+      <span class="search-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" id="userSearch" placeholder="Search">
+    </div>
+
+    <!-- Search results (hidden by default) -->
+    <div id="searchResults" style="display:none;"></div>
+
+    <!-- Explore grid (visible by default) -->
+    <div class="explore-grid" id="exploreGrid"></div>
+
   </div>
 </div>
 
@@ -30,21 +40,63 @@ let currentUser, currentProfile;
   const ctx = await requireAuth();
   if(!ctx) return;
   currentUser = ctx.user; currentProfile = ctx.profile;
-  renderSidebar('friends', currentUser, currentProfile);
+  renderSidebar('search', currentUser, currentProfile);
+  loadExplore();
 })();
 
+/* ---- Explore grid: all posts with media ---- */
+async function loadExplore(){
+  const grid = document.getElementById('exploreGrid');
+  const { data: posts } = await sb
+    .from('posts')
+    .select('id, media_url, media_type')
+    .neq('media_url', '')
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  if(!posts || posts.length === 0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">🔍</div>No posts to explore yet.</div>`;
+    return;
+  }
+
+  grid.innerHTML = posts.map(p => `
+    <div class="explore-item">
+      ${p.media_type === 'video'
+        ? `<video src="${p.media_url}" muted></video>`
+        : `<img src="${p.media_url}" loading="lazy">`}
+      <div class="explore-overlay">
+        <span class="explore-stat">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </span>
+        <span class="explore-stat">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </span>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---- Search ---- */
 let searchTimeout;
 document.getElementById('userSearch').addEventListener('input', (e) => {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => searchUsers(e.target.value.trim()), 350);
+  const term = e.target.value.trim();
+  if(!term){
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('exploreGrid').style.display = 'grid';
+    return;
+  }
+  searchTimeout = setTimeout(() => searchUsers(term), 350);
 });
 
 async function searchUsers(term){
-  const resultsEl = document.getElementById('friendSearchResults');
-  if(!term){ resultsEl.innerHTML = ''; return; }
+  const resultsEl = document.getElementById('searchResults');
+  const exploreEl = document.getElementById('exploreGrid');
+  resultsEl.style.display = 'block';
+  exploreEl.style.display = 'none';
 
   const [{ data: matches }, { data: friends }, { data: sent }, { data: received }] = await Promise.all([
-    sb.from('profiles').select('id, name, avatar_url').ilike('name', `%${term}%`).neq('id', currentUser.id).limit(20),
+    sb.from('profiles').select('id, name, avatar_url, bio').ilike('name', `%${term}%`).neq('id', currentUser.id).limit(20),
     sb.from('friendships').select('friend_id').eq('user_id', currentUser.id),
     sb.from('friend_requests').select('to_id').eq('from_id', currentUser.id).eq('status', 'pending'),
     sb.from('friend_requests').select('from_id').eq('to_id', currentUser.id).eq('status', 'pending')
@@ -56,18 +108,23 @@ async function searchUsers(term){
 
   resultsEl.innerHTML = '';
   (matches||[]).forEach(u => {
-    let actionHtml = `<button class="small-btn btn-add" onclick="sendFriendRequest('${u.id}')">Add Friend</button>`;
-    if(friendIds.has(u.id)) actionHtml = `<span class="tag-pending">✓ Friends</span>`;
-    else if(sentIds.has(u.id)) actionHtml = `<span class="tag-pending">Request sent</span>`;
-    else if(receivedIds.has(u.id)) actionHtml = `<span class="tag-pending">Check Requests tab</span>`;
+    let actionHtml = `<button class="small-btn btn-add" onclick="sendFriendRequest('${u.id}')">Follow</button>`;
+    if(friendIds.has(u.id)) actionHtml = `<span class="tag-pending">Following</span>`;
+    else if(sentIds.has(u.id)) actionHtml = `<span class="tag-pending">Requested</span>`;
+    else if(receivedIds.has(u.id)) actionHtml = `<button class="small-btn btn-accept" onclick="window.location.href='requests.html'">Follow Back</button>`;
     resultsEl.innerHTML += `
       <div class="user-row">
         <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}">
-        <div class="name">${escapeHtml(u.name)}</div>
+        <div class="user-row-info">
+          <div class="name">${escapeHtml(u.name)}</div>
+          <div class="sub">${escapeHtml(u.bio || '')}</div>
+        </div>
         ${actionHtml}
       </div>`;
   });
-  if(!resultsEl.innerHTML) resultsEl.innerHTML = `<div class="empty-state">No members found matching "${escapeHtml(term)}"</div>`;
+  if(!resultsEl.innerHTML){
+    resultsEl.innerHTML = `<div class="empty-state">No results for "${escapeHtml(term)}"</div>`;
+  }
 }
 
 async function sendFriendRequest(toId){

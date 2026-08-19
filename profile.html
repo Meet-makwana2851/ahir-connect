@@ -4,38 +4,65 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profile — AhirConnect</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
 <script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
-<div class="feather-bg"></div>
 <div class="app-shell">
   <div id="sidebarMount"></div>
 
-  <div class="main-panel">
-    <h2 class="panel-title">My Profile</h2>
+  <div class="main-panel main-panel-wide">
 
-    <!-- Profile card -->
-    <div class="profile-card" style="margin-bottom:16px;">
-      <img class="avatar avatar-lg" id="profAvatar" src="">
-      <h3 id="profName" style="margin-top:10px; font-size:18px;">—</h3>
-      <p style="color:var(--text-3); font-size:13px; margin:4px 0 0;" id="profEmail">—</p>
-    </div>
-
-    <!-- Account Settings card -->
-    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); margin-bottom:16px; overflow:hidden;">
-      <div class="settings-section-header">Account</div>
-      <div style="padding:16px 20px;">
-        <div class="field">
-          <label>Bio</label>
-          <textarea id="profBio" rows="3" placeholder="Tell the samaj about yourself..."></textarea>
+    <!-- Instagram-style profile header -->
+    <div class="profile-header">
+      <div class="profile-avatar-wrap">
+        <img class="avatar-lg" id="profAvatar" src="">
+      </div>
+      <div class="profile-info">
+        <div class="profile-top-row">
+          <span class="username" id="profName">—</span>
+          <button class="btn-edit" id="editProfileBtn">Edit profile</button>
         </div>
-        <button class="btn btn-primary" id="saveProfileBtn" style="margin-top:4px;">Save Changes</button>
+        <div class="profile-stats">
+          <span class="stat"><strong id="postCount">0</strong> posts</span>
+          <span class="stat"><strong id="friendCount">0</strong> friends</span>
+        </div>
+        <div class="profile-bio">
+          <span class="bio-name" id="profDisplayName">—</span>
+          <span id="profBio"></span>
+        </div>
       </div>
     </div>
 
+    <!-- Tabs -->
+    <div class="profile-tabs">
+      <button class="profile-tab active" id="tabPosts">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        POSTS
+      </button>
+    </div>
+
+    <!-- Posts grid -->
+    <div class="profile-grid" id="postsGrid"></div>
+
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-backdrop" id="editModal" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>Edit profile</span>
+      <button class="modal-close" id="closeEditModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:16px;">
+        <label>Bio</label>
+        <textarea id="editBio" rows="3" placeholder="Tell people about yourself..."></textarea>
+      </div>
+      <button class="btn btn-primary" id="saveProfileBtn" style="border-radius:8px;">Save</button>
+    </div>
   </div>
 </div>
 
@@ -50,19 +77,74 @@ let currentUser, currentProfile;
   currentUser = ctx.user; currentProfile = ctx.profile;
   renderSidebar('profile', currentUser, currentProfile);
 
-  document.getElementById('profName').textContent = currentProfile.name || 'Member';
-  document.getElementById('profEmail').textContent = currentUser.email || '';
+  // Fill profile
   document.getElementById('profAvatar').src = currentProfile.avatar_url || defaultAvatar(currentProfile.name);
-  document.getElementById('profBio').value = currentProfile.bio || '';
+  document.getElementById('profName').textContent = currentProfile.name || 'Member';
+  document.getElementById('profDisplayName').textContent = currentProfile.name || 'Member';
+  document.getElementById('profBio').textContent = currentProfile.bio || '';
+  document.getElementById('editBio').value = currentProfile.bio || '';
+
+  loadProfileStats();
+  loadProfilePosts();
 })();
 
-document.getElementById('saveProfileBtn').onclick = async () => {
-  const bio = document.getElementById('profBio').value.trim();
-  const { error } = await sb.from('profiles').update({ bio }).eq('id', currentUser.id);
-  if(error){ alert('Error saving: ' + error.message); return; }
-  alert('Profile updated!');
-};
+async function loadProfileStats(){
+  const [postsRes, friendsRes] = await Promise.all([
+    sb.from('posts').select('*', { count: 'exact', head: true }).eq('author_id', currentUser.id),
+    sb.from('friendships').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+  ]);
+  document.getElementById('postCount').textContent = postsRes.count || 0;
+  document.getElementById('friendCount').textContent = friendsRes.count || 0;
+}
 
+async function loadProfilePosts(){
+  const grid = document.getElementById('postsGrid');
+  const { data: posts } = await sb.from('posts')
+    .select('id, media_url, media_type, caption')
+    .eq('author_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if(!posts || posts.length === 0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">📷</div>No posts yet</div>`;
+    return;
+  }
+
+  grid.innerHTML = posts.map(p => {
+    if(p.media_url){
+      return `<div class="profile-grid-item">
+        ${p.media_type === 'video'
+          ? `<video src="${p.media_url}" muted></video>`
+          : `<img src="${p.media_url}" loading="lazy">`}
+      </div>`;
+    } else {
+      // Text-only post — show caption as tile
+      return `<div class="profile-grid-item" style="display:flex;align-items:center;justify-content:center;padding:16px;font-size:13px;color:var(--text);background:var(--surface-2);text-align:center;">
+        ${escapeHtml(p.caption).substring(0, 80)}${p.caption.length > 80 ? '…' : ''}
+      </div>`;
+    }
+  }).join('');
+}
+
+/* Edit profile modal */
+document.getElementById('editProfileBtn').addEventListener('click', () => {
+  document.getElementById('editModal').style.display = 'flex';
+});
+document.getElementById('closeEditModal').addEventListener('click', () => {
+  document.getElementById('editModal').style.display = 'none';
+});
+document.getElementById('editModal').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('editModal'))
+    document.getElementById('closeEditModal').click();
+});
+
+document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+  const bio = document.getElementById('editBio').value.trim();
+  const { error } = await sb.from('profiles').update({ bio }).eq('id', currentUser.id);
+  if(error){ alert('Error: ' + error.message); return; }
+  document.getElementById('profBio').textContent = bio;
+  currentProfile.bio = bio;
+  document.getElementById('closeEditModal').click();
+});
 </script>
 </body>
 </html>

@@ -3,79 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Requests — AhirConnect</title>
-
+<title>Notifications — AhirConnect</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
 <script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
-<div class="feather-bg"></div>
 <div class="app-shell">
   <div id="sidebarMount"></div>
 
   <div class="main-panel">
-    <h2 class="panel-title">Friend Requests</h2>
-    <div id="requestsList"></div>
+    <h2 style="font-size:24px;font-weight:700;margin-bottom:24px;">Notifications</h2>
+
+    <div id="notifList"></div>
   </div>
 </div>
 
 <script src="shared/config.js"></script>
 <script src="shared/utils.js"></script>
 <script>
-let currentUser, currentProfile, reqChannel = null;
+let currentUser, currentProfile;
 
 (async () => {
   const ctx = await requireAuth();
   if(!ctx) return;
   currentUser = ctx.user; currentProfile = ctx.profile;
-  renderSidebar('requests', currentUser, currentProfile);
-  loadRequests();
+  renderSidebar('notifications', currentUser, currentProfile);
+  loadNotifications();
 })();
 
-async function loadRequests(){
-  const { data: reqs, error } = await sb
+async function loadNotifications(){
+  const listEl = document.getElementById('notifList');
+
+  const { data: requests } = await sb
     .from('friend_requests')
-    .select('id, from_id, profiles:from_id ( name, avatar_url )')
+    .select('*, profiles:from_id(name, avatar_url)')
     .eq('to_id', currentUser.id)
-    .eq('status', 'pending');
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
 
-  const listEl = document.getElementById('requestsList');
-  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load requests: ${error.message}</div>`; return; }
-
-  if(!reqs || reqs.length === 0){
-    listEl.innerHTML = `<div class="empty-state"><div class="big">🤝</div>No pending requests right now.</div>`;
-  } else {
-    listEl.innerHTML = '';
-    reqs.forEach(r => {
-      const fromUser = r.profiles || {};
-      listEl.innerHTML += `
-        <div class="user-row">
-          <img class="avatar" src="${fromUser.avatar_url || defaultAvatar(fromUser.name)}">
-          <div class="name">${escapeHtml(fromUser.name || 'Member')}</div>
-          <button class="small-btn btn-accept" onclick="respondRequest('${r.id}','accept')">Accept</button>
-          <button class="small-btn btn-decline" onclick="respondRequest('${r.id}','decline')">Decline</button>
-        </div>`;
-    });
+  if(!requests || requests.length === 0){
+    listEl.innerHTML = `<div class="empty-state"><div class="big">💛</div>No new notifications</div>`;
+    return;
   }
 
-  refreshRequestBadge(currentUser.id);
+  listEl.innerHTML = `<div class="notif-section-title">Follow Requests</div>`;
 
-  if(reqChannel) sb.removeChannel(reqChannel);
-  reqChannel = sb.channel('public:friend_requests')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, () => loadRequests())
-    .subscribe();
+  requests.forEach(r => {
+    const from = r.profiles || {};
+    listEl.innerHTML += `
+      <div class="notif-item" id="notif-${r.id}">
+        <img class="avatar" src="${from.avatar_url || defaultAvatar(from.name)}">
+        <div class="notif-item-body">
+          <strong>${escapeHtml(from.name || 'Someone')}</strong> wants to follow you.
+          <span class="notif-time">${timeAgo(r.created_at)}</span>
+        </div>
+        <div class="notif-actions">
+          <button class="small-btn btn-accept" onclick="acceptReq('${r.id}')">Confirm</button>
+          <button class="small-btn btn-decline" onclick="declineReq('${r.id}')">Delete</button>
+        </div>
+      </div>`;
+  });
 }
 
-async function respondRequest(reqId, action){
-  if(action === 'accept'){
-    const { error } = await sb.rpc('accept_friend_request', { request_id: reqId });
-    if(error){ alert(error.message); return; }
-  } else {
-    const { error } = await sb.from('friend_requests').update({ status: 'declined' }).eq('id', reqId);
-    if(error){ alert(error.message); return; }
-  }
-  loadRequests();
+async function acceptReq(id){
+  const { error } = await sb.rpc('accept_friend_request', { request_id: id });
+  if(error){ alert(error.message); return; }
+  document.getElementById('notif-' + id)?.remove();
+  refreshRequestDot(currentUser.id);
+}
+
+async function declineReq(id){
+  await sb.from('friend_requests').update({ status: 'declined' }).eq('id', id);
+  document.getElementById('notif-' + id)?.remove();
+  refreshRequestDot(currentUser.id);
 }
 </script>
 </body>

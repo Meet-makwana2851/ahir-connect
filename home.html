@@ -3,28 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Feed — AhirConnect</title>
-
+<title>AhirConnect</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="shared/style.css">
 <script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
 </head>
 <body>
-<div class="feather-bg"></div>
 <div class="app-shell">
   <div id="sidebarMount"></div>
 
   <div class="main-panel">
-    <h2 class="panel-title">Community Feed</h2>
-    <div class="composer">
-      <textarea id="postCaption" placeholder="Share something with your friends..."></textarea>
-      <div id="mediaPreviewWrap"></div>
-      <div class="composer-actions">
-        <label class="file-label">📷 Photo / Video<input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;"></label>
-        <button class="btn btn-primary post-btn" id="postBtn">Post</button>
-      </div>
-    </div>
+    <!-- Stories row -->
+    <div class="stories-row" id="storiesRow"></div>
+
+    <!-- Feed -->
     <div id="feedList"></div>
+  </div>
+</div>
+
+<!-- Create Post Modal -->
+<div class="modal-backdrop" id="createModal" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>Create new post</span>
+      <button class="modal-close" id="closeCreateModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="postCaption" placeholder="Write a caption..."></textarea>
+      <div id="mediaPreviewWrap"></div>
+    </div>
+    <div class="modal-footer">
+      <label class="file-label">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Photo / Video
+        <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;">
+      </label>
+      <button class="btn btn-primary" style="width:auto;padding:8px 24px;border-radius:8px;font-size:14px;" id="postBtn">Share</button>
+    </div>
   </div>
 </div>
 
@@ -38,8 +53,27 @@ let currentUser, currentProfile, mediaFile = null, feedChannel = null;
   if(!ctx) return;
   currentUser = ctx.user; currentProfile = ctx.profile;
   renderSidebar('home', currentUser, currentProfile);
+  loadStories();
   loadFeed();
 })();
+
+/* ---- Create Post Modal ---- */
+function openCreateModal(){
+  document.getElementById('createModal').style.display = 'flex';
+  document.getElementById('postCaption').focus();
+}
+document.getElementById('closeCreateModal').addEventListener('click', () => {
+  document.getElementById('createModal').style.display = 'none';
+  document.getElementById('postCaption').value = '';
+  document.getElementById('mediaPreviewWrap').innerHTML = '';
+  document.getElementById('mediaInput').value = '';
+  mediaFile = null;
+});
+document.getElementById('createModal').addEventListener('click', (e) => {
+  if(e.target === document.getElementById('createModal')){
+    document.getElementById('closeCreateModal').click();
+  }
+});
 
 document.getElementById('mediaInput').addEventListener('change', (e) => {
   mediaFile = e.target.files[0];
@@ -55,9 +89,9 @@ document.getElementById('mediaInput').addEventListener('change', (e) => {
 
 document.getElementById('postBtn').onclick = async () => {
   const caption = document.getElementById('postCaption').value.trim();
-  if(!caption && !mediaFile){ alert('Write something or attach a photo/video first.'); return; }
+  if(!caption && !mediaFile){ alert('Write something or attach a photo first.'); return; }
   const btn = document.getElementById('postBtn');
-  btn.disabled = true; btn.textContent = 'Posting...';
+  btn.disabled = true; btn.textContent = 'Sharing...';
   try{
     let mediaUrl = '', mediaType = '';
     if(mediaFile){
@@ -72,15 +106,44 @@ document.getElementById('postBtn').onclick = async () => {
       author_id: currentUser.id, caption, media_url: mediaUrl, media_type: mediaType
     });
     if(error) throw error;
-    document.getElementById('postCaption').value = '';
-    document.getElementById('mediaPreviewWrap').innerHTML = '';
-    document.getElementById('mediaInput').value = '';
-    mediaFile = null;
+    document.getElementById('closeCreateModal').click();
     loadFeed();
   }catch(err){ alert('Error posting: ' + err.message); }
-  btn.disabled = false; btn.textContent = 'Post';
+  btn.disabled = false; btn.textContent = 'Share';
 };
 
+/* ---- Stories (friends' avatars) ---- */
+async function loadStories(){
+  const row = document.getElementById('storiesRow');
+  const { data: friends } = await sb.from('friendships')
+    .select('friend_id, profiles:friend_id(name, avatar_url)')
+    .eq('user_id', currentUser.id)
+    .limit(15);
+
+  if(!friends || friends.length === 0){
+    row.innerHTML = `<div class="story-item">
+      <div class="story-ring seen"><img src="${currentProfile.avatar_url || defaultAvatar(currentProfile.name)}"></div>
+      <span class="story-name">Your story</span>
+    </div>`;
+    return;
+  }
+
+  let html = `<a href="profile.html" class="story-item">
+    <div class="story-ring seen"><img src="${currentProfile.avatar_url || defaultAvatar(currentProfile.name)}"></div>
+    <span class="story-name">Your story</span>
+  </a>`;
+
+  friends.forEach(f => {
+    const p = f.profiles || {};
+    html += `<a href="profile.html?id=${f.friend_id}" class="story-item">
+      <div class="story-ring"><img src="${p.avatar_url || defaultAvatar(p.name)}"></div>
+      <span class="story-name">${escapeHtml(p.name || 'Friend')}</span>
+    </a>`;
+  });
+  row.innerHTML = html;
+}
+
+/* ---- Feed ---- */
 async function loadFeed(){
   const listEl = document.getElementById('feedList');
   const { data: posts, error } = await sb
@@ -88,8 +151,29 @@ async function loadFeed(){
     .select('*, profiles:author_id ( name, avatar_url )')
     .order('created_at', { ascending: false });
 
-  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load feed: ${error.message}</div>`; return; }
-  renderFeed(posts);
+  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load feed.</div>`; return; }
+
+  // Get likes and comments for all posts
+  const postIds = posts.map(p => p.id);
+  const [likesRes, commentsRes, myLikesRes] = await Promise.all([
+    sb.from('likes').select('post_id', { count: 'exact' }).in('post_id', postIds),
+    sb.from('comments').select('*, profiles:user_id(name)').in('post_id', postIds).order('created_at', { ascending: true }),
+    sb.from('likes').select('post_id').eq('user_id', currentUser.id).in('post_id', postIds),
+  ]);
+
+  // Count likes per post
+  const likeCountMap = {};
+  (likesRes.data || []).forEach(l => { likeCountMap[l.post_id] = (likeCountMap[l.post_id] || 0) + 1; });
+  // My likes set
+  const myLikes = new Set((myLikesRes.data || []).map(l => l.post_id));
+  // Comments grouped
+  const commentMap = {};
+  (commentsRes.data || []).forEach(c => {
+    if(!commentMap[c.post_id]) commentMap[c.post_id] = [];
+    commentMap[c.post_id].push(c);
+  });
+
+  renderFeed(posts, likeCountMap, myLikes, commentMap);
 
   if(feedChannel) sb.removeChannel(feedChannel);
   feedChannel = sb.channel('public:posts')
@@ -97,32 +181,136 @@ async function loadFeed(){
     .subscribe();
 }
 
-function renderFeed(posts){
+function renderFeed(posts, likeCountMap, myLikes, commentMap){
   const listEl = document.getElementById('feedList');
   if(!posts || posts.length === 0){
-    listEl.innerHTML = `<div class="empty-state"><div class="big">🦚</div>No posts yet. Add friends or share something!</div>`;
+    listEl.innerHTML = `<div class="empty-state"><div class="big">📷</div>No posts yet. Follow people or share a photo!</div>`;
     return;
   }
   listEl.innerHTML = '';
   posts.forEach(p => {
     const author = p.profiles || {};
-    const time = new Date(p.created_at).toLocaleString();
+    const likeCount = likeCountMap[p.id] || 0;
+    const liked = myLikes.has(p.id);
+    const comments = commentMap[p.id] || [];
+    const recentComments = comments.slice(-2);
+
     let mediaHtml = '';
     if(p.media_url){
       mediaHtml = p.media_type === 'video'
-        ? `<video src="${p.media_url}" class="post-media" controls></video>`
-        : `<img src="${p.media_url}" class="post-media">`;
+        ? `<div class="post-media-wrap"><video src="${p.media_url}" class="post-media" controls></video></div>`
+        : `<div class="post-media-wrap" ondblclick="doubleTapLike(event, '${p.id}')"><img src="${p.media_url}" class="post-media"></div>`;
     }
-    listEl.innerHTML += `
-      <div class="post-card">
-        <div class="post-head">
-          <img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}">
-          <div><div class="name">${escapeHtml(author.name || 'Member')}</div><div class="time">${time}</div></div>
+
+    let commentsHtml = '';
+    if(comments.length > 2){
+      commentsHtml += `<button class="view-comments" onclick="this.style.display='none';this.nextElementSibling.style.display='block';">View all ${comments.length} comments</button>`;
+      commentsHtml += `<div style="display:none;">`;
+      comments.forEach(c => {
+        commentsHtml += `<div class="comment-item"><a class="cap-user">${escapeHtml(c.profiles?.name || 'User')}</a>${escapeHtml(c.text)}</div>`;
+      });
+      commentsHtml += `</div>`;
+    }
+    recentComments.forEach(c => {
+      commentsHtml += `<div class="comment-item"><a class="cap-user">${escapeHtml(c.profiles?.name || 'User')}</a>${escapeHtml(c.text)}</div>`;
+    });
+
+    const card = document.createElement('div');
+    card.className = 'post-card';
+    card.innerHTML = `
+      <!-- Header -->
+      <div class="post-header">
+        <img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}">
+        <div class="post-header-info">
+          <a class="username">${escapeHtml(author.name || 'Member')}</a>
         </div>
-        ${p.caption ? `<div class="post-caption">${escapeHtml(p.caption)}</div>` : ''}
-        ${mediaHtml}
-      </div>`;
+        <button class="post-more-btn">⋯</button>
+      </div>
+
+      <!-- Media -->
+      ${mediaHtml}
+
+      <!-- Actions -->
+      <div class="post-actions">
+        <div class="post-actions-left">
+          <button class="action-btn ${liked ? 'liked' : ''}" data-post-id="${p.id}" onclick="toggleLike(this, '${p.id}')">
+            ${liked ? ICONS.heartFill : ICONS.heart}
+          </button>
+          <button class="action-btn" onclick="this.closest('.post-card').querySelector('.comment-input').focus()">
+            ${ICONS.comment}
+          </button>
+          <button class="action-btn">${ICONS.share}</button>
+        </div>
+        <div class="post-actions-right">
+          <button class="action-btn" onclick="this.classList.toggle('bookmarked')">${ICONS.bookmark}</button>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="post-details">
+        <div class="like-count" id="likes-${p.id}">${likeCount > 0 ? likeCount + ' like' + (likeCount > 1 ? 's' : '') : ''}</div>
+        ${p.caption ? `<div class="post-caption-row"><a class="cap-user">${escapeHtml(author.name || 'Member')}</a><span class="cap-text">${escapeHtml(p.caption)}</span></div>` : ''}
+        ${commentsHtml}
+        <div class="post-time">${timeAgo(p.created_at)}</div>
+      </div>
+
+      <!-- Comment input -->
+      <form class="post-comment-form" onsubmit="submitComment(event, '${p.id}')">
+        <input class="comment-input" type="text" placeholder="Add a comment..." oninput="this.nextElementSibling.classList.toggle('active', this.value.trim().length > 0)">
+        <button type="submit" class="post-comment-btn">Post</button>
+      </form>
+    `;
+    listEl.appendChild(card);
   });
+}
+
+/* ---- Like / Unlike ---- */
+async function toggleLike(btn, postId){
+  const isLiked = btn.classList.contains('liked');
+  btn.classList.toggle('liked');
+  btn.classList.add('like-bounce');
+  setTimeout(() => btn.classList.remove('like-bounce'), 300);
+  btn.innerHTML = isLiked ? ICONS.heart : ICONS.heartFill;
+
+  if(isLiked){
+    await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+  } else {
+    await sb.from('likes').insert({ post_id: postId, user_id: currentUser.id });
+  }
+  // Update count
+  const { count } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+  const el = document.getElementById('likes-' + postId);
+  if(el) el.textContent = count > 0 ? count + ' like' + (count > 1 ? 's' : '') : '';
+}
+
+/* ---- Double-tap like ---- */
+function doubleTapLike(e, postId){
+  // Show heart animation
+  const wrap = e.currentTarget;
+  const heart = document.createElement('div');
+  heart.className = 'heart-anim';
+  heart.innerHTML = HEART_SVG;
+  wrap.appendChild(heart);
+  setTimeout(() => heart.remove(), 1000);
+
+  // Like the post if not already liked
+  const btn = document.querySelector(`[data-post-id="${postId}"]`);
+  if(btn && !btn.classList.contains('liked')){
+    toggleLike(btn, postId);
+  }
+}
+
+/* ---- Submit comment ---- */
+async function submitComment(e, postId){
+  e.preventDefault();
+  const input = e.target.querySelector('.comment-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  e.target.querySelector('.post-comment-btn').classList.remove('active');
+
+  await sb.from('comments').insert({ post_id: postId, user_id: currentUser.id, text });
+  loadFeed(); // Refresh to show new comment
 }
 </script>
 </body>
