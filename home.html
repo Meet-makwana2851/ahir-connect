@@ -15,10 +15,26 @@
   <div class="main-panel">
     <!-- Stories row -->
     <div class="stories-row" id="storiesRow"></div>
+    <!-- Hidden file input for story upload -->
+    <input type="file" id="storyFileInput" accept="image/*,video/*" style="display:none;">
 
     <!-- Feed -->
     <div id="feedList"></div>
   </div>
+</div>
+
+<!-- Story Viewer Modal -->
+<div class="story-viewer" id="storyViewer" style="display:none;">
+  <div class="story-viewer-header">
+    <div class="story-viewer-user">
+      <img class="avatar" id="storyViewerAvatar" src="">
+      <span id="storyViewerName"></span>
+      <span class="story-viewer-time" id="storyViewerTime"></span>
+    </div>
+    <button class="story-viewer-close" id="closeStoryViewer">✕</button>
+  </div>
+  <div class="story-viewer-media" id="storyViewerMedia"></div>
+  <div class="story-viewer-progress" id="storyProgress"></div>
 </div>
 
 <!-- Create Post Modal -->
@@ -112,36 +128,160 @@ document.getElementById('postBtn').onclick = async () => {
   btn.disabled = false; btn.textContent = 'Share';
 };
 
-/* ---- Stories (friends' avatars) ---- */
+/* ---- Stories (only users with active stories in last 24h) ---- */
 async function loadStories(){
   const row = document.getElementById('storiesRow');
-  const { data: friends } = await sb.from('friendships')
-    .select('friend_id, profiles:friend_id(name, avatar_url)')
-    .eq('user_id', currentUser.id)
-    .limit(15);
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  if(!friends || friends.length === 0){
-    row.innerHTML = `<div class="story-item">
-      <div class="story-ring seen"><img src="${currentProfile.avatar_url || defaultAvatar(currentProfile.name)}"></div>
-      <span class="story-name">Your story</span>
-    </div>`;
-    return;
+  // Get all active stories (last 24h)
+  const { data: stories } = await sb.from('stories')
+    .select('id, author_id, media_url, media_type, created_at, profiles:author_id(name, avatar_url)')
+    .gt('created_at', cutoff)
+    .order('created_at', { ascending: false });
+
+  // Get which stories the current user has viewed
+  const storyIds = (stories || []).map(s => s.id);
+  let viewedSet = new Set();
+  if(storyIds.length > 0){
+    const { data: views } = await sb.from('story_views')
+      .select('story_id')
+      .eq('viewer_id', currentUser.id)
+      .in('story_id', storyIds);
+    viewedSet = new Set((views || []).map(v => v.story_id));
   }
 
-  let html = `<a href="profile.html" class="story-item">
-    <div class="story-ring seen"><img src="${currentProfile.avatar_url || defaultAvatar(currentProfile.name)}"></div>
-    <span class="story-name">Your story</span>
-  </a>`;
-
-  friends.forEach(f => {
-    const p = f.profiles || {};
-    html += `<a href="profile.html?id=${f.friend_id}" class="story-item">
-      <div class="story-ring"><img src="${p.avatar_url || defaultAvatar(p.name)}"></div>
-      <span class="story-name">${escapeHtml(p.name || 'Friend')}</span>
-    </a>`;
+  // Group stories by author
+  const authorMap = new Map();
+  (stories || []).forEach(s => {
+    if(!authorMap.has(s.author_id)){
+      authorMap.set(s.author_id, {
+        author_id: s.author_id,
+        profile: s.profiles || {},
+        stories: [],
+        allSeen: true
+      });
+    }
+    const group = authorMap.get(s.author_id);
+    group.stories.push(s);
+    if(!viewedSet.has(s.id)) group.allSeen = false;
   });
+
+  // Check if current user has an active story
+  const myStoryGroup = authorMap.get(currentUser.id);
+  const hasMyStory = !!myStoryGroup;
+
+  // "Your story" — always shown first
+  let html = `<div class="story-item" onclick="${hasMyStory ? `viewStoryGroup('${currentUser.id}')` : `document.getElementById('storyFileInput').click()`}">
+    <div class="story-ring ${hasMyStory ? (myStoryGroup.allSeen ? 'seen' : '') : 'no-story'}">
+      <img src="${currentProfile.avatar_url || defaultAvatar(currentProfile.name)}">
+    </div>
+    ${!hasMyStory ? '<div class="story-add-badge">+</div>' : ''}
+    <span class="story-name">Your story</span>
+  </div>`;
+
+  // Other users' stories (unseen first)
+  const others = [...authorMap.entries()]
+    .filter(([id]) => id !== currentUser.id)
+    .sort((a, b) => a[1].allSeen - b[1].allSeen); // unseen first
+
+  others.forEach(([authorId, group]) => {
+    const p = group.profile;
+    html += `<div class="story-item" onclick="viewStoryGroup('${authorId}')">
+      <div class="story-ring ${group.allSeen ? 'seen' : ''}">
+        <img src="${p.avatar_url || defaultAvatar(p.name)}">
+      </div>
+      <span class="story-name">${escapeHtml(p.name || 'User')}</span>
+    </div>`;
+  });
+
+  // If no stories at all, just show "Your story" with add button
   row.innerHTML = html;
+  window._storyAuthorMap = authorMap;
+  window._storyViewedSet = viewedSet;
 }
+
+/* ---- Upload Story ---- */
+document.getElementById('storyFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const mediaType = file.type.startsWith('video') ? 'video' : 'image';
+  const path = `${currentUser.id}/${Date.now()}_${file.name}`;
+  try {
+    const { error: upErr } = await sb.storage.from('stories').upload(path, file);
+    if(upErr) throw upErr;
+    const { data: urlData } = sb.storage.from('stories').getPublicUrl(path);
+    const { error } = await sb.from('stories').insert({
+      author_id: currentUser.id, media_url: urlData.publicUrl, media_type: mediaType
+    });
+    if(error) throw error;
+    loadStories(); // Refresh stories row
+  } catch(err) { alert('Error uploading story: ' + err.message); }
+  e.target.value = '';
+});
+
+/* ---- View Story ---- */
+let storyTimer = null;
+function viewStoryGroup(authorId){
+  const group = window._storyAuthorMap?.get(authorId);
+  if(!group || group.stories.length === 0) return;
+
+  const viewer = document.getElementById('storyViewer');
+  const p = group.profile;
+  document.getElementById('storyViewerAvatar').src = p.avatar_url || defaultAvatar(p.name);
+  document.getElementById('storyViewerName').textContent = p.name || 'User';
+
+  let idx = 0;
+  // Find first unseen story
+  for(let i = 0; i < group.stories.length; i++){
+    if(!window._storyViewedSet.has(group.stories[i].id)){ idx = i; break; }
+  }
+
+  function showStory(i){
+    if(i >= group.stories.length){ viewer.style.display = 'none'; clearTimeout(storyTimer); return; }
+    const s = group.stories[i];
+    document.getElementById('storyViewerTime').textContent = timeAgo(s.created_at);
+    const mediaEl = document.getElementById('storyViewerMedia');
+    if(s.media_type === 'video'){
+      mediaEl.innerHTML = `<video src="${s.media_url}" autoplay playsinline style="max-width:100%;max-height:80vh;border-radius:8px;"></video>`;
+    } else {
+      mediaEl.innerHTML = `<img src="${s.media_url}" style="max-width:100%;max-height:80vh;border-radius:8px;">`;
+    }
+
+    // Progress bar
+    const progEl = document.getElementById('storyProgress');
+    progEl.innerHTML = group.stories.map((_, pi) =>
+      `<div class="story-prog-seg ${pi < i ? 'done' : pi === i ? 'active' : ''}"><div class="story-prog-fill"></div></div>`
+    ).join('');
+
+    // Mark as viewed
+    if(!window._storyViewedSet.has(s.id)){
+      sb.from('story_views').insert({ story_id: s.id, viewer_id: currentUser.id }).then(() => {
+        window._storyViewedSet.add(s.id);
+      });
+    }
+
+    // Auto-advance after 5 seconds
+    clearTimeout(storyTimer);
+    storyTimer = setTimeout(() => { idx++; showStory(idx); }, 5000);
+  }
+
+  viewer.style.display = 'flex';
+  showStory(idx);
+
+  // Click right side = next, left side = prev
+  document.getElementById('storyViewerMedia').onclick = (e) => {
+    clearTimeout(storyTimer);
+    const rect = e.currentTarget.getBoundingClientRect();
+    if(e.clientX > rect.left + rect.width / 2){ idx++; } else { idx = Math.max(0, idx - 1); }
+    showStory(idx);
+  };
+}
+
+document.getElementById('closeStoryViewer').addEventListener('click', () => {
+  document.getElementById('storyViewer').style.display = 'none';
+  clearTimeout(storyTimer);
+  loadStories(); // Refresh to update ring colors
+});
 
 /* ---- Feed ---- */
 async function loadFeed(){
