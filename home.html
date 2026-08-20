@@ -41,11 +41,6 @@
         <div class="story-viewer-progress" id="storyProgress"></div>
     </div>
 
-    <div class="media-lightbox" id="mediaLightbox" hidden role="dialog" aria-modal="true" aria-label="Expanded post media">
-        <button class="lightbox-close" id="closeLightbox" aria-label="Close expanded media">×</button>
-        <div class="lightbox-content" id="lightboxContent"></div>
-    </div>
-
     <!-- Create Post Modal -->
     <div class="modal-backdrop" id="createModal" style="display:none;">
         <div class="modal-card">
@@ -74,7 +69,7 @@
         let currentUser, currentProfile, mediaFile = null,
             feedChannel = null;
 
-        (async() ={
+        (async () => {
             const ctx = await requireAuth();
             if (!ctx) return;
             currentUser = ctx.user;
@@ -89,30 +84,20 @@
             document.getElementById('createModal').style.display = 'flex';
             document.getElementById('postCaption').focus();
         }
-        const mediaLightbox = document.getElementById('mediaLightbox');
-        const lightboxContent = document.getElementById('lightboxContent');
-        function closeMediaLightbox() { mediaLightbox.hidden = true; lightboxContent.innerHTML = ''; }
-        window.openMediaLightbox = (url, type) ={
-            lightboxContent.innerHTML = type === 'video' ? `<video src="${url}" controls autoplay></video>` : `<img src="${url}" alt="Expanded post media">`;
-            mediaLightbox.hidden = false;
-        };
-        document.getElementById('closeLightbox').addEventListener('click', closeMediaLightbox);
-        mediaLightbox.addEventListener('click', e ={ if (e.target === mediaLightbox) closeMediaLightbox(); });
-        document.addEventListener('keydown', e ={ if (e.key === 'Escape' && !mediaLightbox.hidden) closeMediaLightbox(); });
-        document.getElementById('closeCreateModal').addEventListener('click', () ={
+        document.getElementById('closeCreateModal').addEventListener('click', () => {
             document.getElementById('createModal').style.display = 'none';
             document.getElementById('postCaption').value = '';
             document.getElementById('mediaPreviewWrap').innerHTML = '';
             document.getElementById('mediaInput').value = '';
             mediaFile = null;
         });
-        document.getElementById('createModal').addEventListener('click', (e) ={
+        document.getElementById('createModal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('createModal')) {
                 document.getElementById('closeCreateModal').click();
             }
         });
 
-        document.getElementById('mediaInput').addEventListener('change', (e) ={
+        document.getElementById('mediaInput').addEventListener('change', (e) => {
             mediaFile = e.target.files[0];
             const wrap = document.getElementById('mediaPreviewWrap');
             wrap.innerHTML = '';
@@ -124,7 +109,7 @@
             }
         });
 
-        document.getElementById('postBtn').onclick = async() ={
+        document.getElementById('postBtn').onclick = async () => {
             const caption = document.getElementById('postCaption').value.trim();
             if (!caption && !mediaFile) {
                 alert('Write something or attach a photo first.');
@@ -182,21 +167,21 @@
                 });
 
             // Get which stories the current user has viewed
-            const storyIds = (stories || []).map(s =s.id);
+            const storyIds = (stories || []).map(s => s.id);
             let viewedSet = new Set();
-            if (storyIds.length 0) {
+            if (storyIds.length > 0) {
                 const {
                     data: views
                 } = await sb.from('story_views')
                     .select('story_id')
                     .eq('viewer_id', currentUser.id)
                     .in('story_id', storyIds);
-                viewedSet = new Set((views || []).map(v =v.story_id));
+                viewedSet = new Set((views || []).map(v => v.story_id));
             }
 
             // Group stories by author
             const authorMap = new Map();
-            (stories || []).forEach(s ={
+            (stories || []).forEach(s => {
                 if (!authorMap.has(s.author_id)) {
                     authorMap.set(s.author_id, {
                         author_id: s.author_id,
@@ -225,10 +210,10 @@
 
   // Other users' stories (unseen first)
   const others = [...authorMap.entries()]
-    .filter(([id]) =id !== currentUser.id)
-    .sort((a, b) =a[1].allSeen - b[1].allSeen); // unseen first
+    .filter(([id]) => id !== currentUser.id)
+    .sort((a, b) => a[1].allSeen - b[1].allSeen); // unseen first
 
-  others.forEach(([authorId, group]) ={
+  others.forEach(([authorId, group]) => {
     const p = group.profile;
     html += `<div class="story-item" onclick="viewStoryGroup('${authorId}')">
       <div class="story-ring ${group.allSeen ? 'seen' : ''}">
@@ -245,7 +230,7 @@
 }
 
 /* ---- Upload Story ---- */
-document.getElementById('storyFileInput').addEventListener('change', async (e) ={
+document.getElementById('storyFileInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if(!file) return;
   const mediaType = file.type.startsWith('video') ? 'video' : 'image';
@@ -299,29 +284,29 @@ function viewStoryGroup(authorId){
 
     // Mark as viewed
     if(!window._storyViewedSet.has(s.id)){
-      sb.from('story_views').insert({ story_id: s.id, viewer_id: currentUser.id }).then(() ={
+      sb.from('story_views').insert({ story_id: s.id, viewer_id: currentUser.id }).then(() => {
         window._storyViewedSet.add(s.id);
       });
     }
 
     // Auto-advance after 5 seconds
     clearTimeout(storyTimer);
-    storyTimer = setTimeout(() ={ idx++; showStory(idx); }, 5000);
+    storyTimer = setTimeout(() => { idx++; showStory(idx); }, 5000);
   }
 
   viewer.style.display = 'flex';
   showStory(idx);
 
   // Click right side = next, left side = prev
-  document.getElementById('storyViewerMedia').onclick = (e) ={
+  document.getElementById('storyViewerMedia').onclick = (e) => {
     clearTimeout(storyTimer);
     const rect = e.currentTarget.getBoundingClientRect();
-    if(e.clientX rect.left + rect.width / 2){ idx++; } else { idx = Math.max(0, idx - 1); }
+    if (e.clientX > rect.left + rect.width / 2){ idx++; } else { idx = Math.max(0, idx - 1); }
     showStory(idx);
   };
 }
 
-document.getElementById('closeStoryViewer').addEventListener('click', () ={
+document.getElementById('closeStoryViewer').addEventListener('click', () => {
   document.getElementById('storyViewer').style.display = 'none';
   clearTimeout(storyTimer);
   loadStories(); // Refresh to update ring colors
@@ -338,7 +323,7 @@ async function loadFeed(){
   if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load feed.</div>`; return; }
 
   // Get likes and comments for all posts
-  const postIds = posts.map(p =p.id);
+  const postIds = posts.map(p => p.id);
   const [likesRes, commentsRes, myLikesRes] = await Promise.all([
     sb.from('likes').select('post_id', { count: 'exact' }).in('post_id', postIds),
     sb.from('comments').select('*, profiles:user_id(name)').in('post_id', postIds).order('created_at', { ascending: true }),
@@ -347,12 +332,12 @@ async function loadFeed(){
 
   // Count likes per post
   const likeCountMap = {};
-  (likesRes.data || []).forEach(l ={ likeCountMap[l.post_id] = (likeCountMap[l.post_id] || 0) + 1; });
+  (likesRes.data || []).forEach(l => { likeCountMap[l.post_id] = (likeCountMap[l.post_id] || 0) + 1; });
   // My likes set
-  const myLikes = new Set((myLikesRes.data || []).map(l =l.post_id));
+  const myLikes = new Set((myLikesRes.data || []).map(l => l.post_id));
   // Comments grouped
   const commentMap = {};
-  (commentsRes.data || []).forEach(c ={
+  (commentsRes.data || []).forEach(c => {
     if(!commentMap[c.post_id]) commentMap[c.post_id] = [];
     commentMap[c.post_id].push(c);
   });
@@ -361,7 +346,7 @@ async function loadFeed(){
 
   if(feedChannel) sb.removeChannel(feedChannel);
   feedChannel = sb.channel('public:posts')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () =loadFeed())
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
     .subscribe();
 }
 
@@ -372,7 +357,7 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
     return;
   }
   listEl.innerHTML = '';
-  posts.forEach(p ={
+  posts.forEach(p => {
     const author = p.profiles || {};
     const likeCount = likeCountMap[p.id] || 0;
     const liked = myLikes.has(p.id);
@@ -382,20 +367,20 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
     let mediaHtml = '';
     if(p.media_url){
       mediaHtml = p.media_type === 'video'
-        ? `<div class="post-media-wrap"><video src="${p.media_url}" class="post-media" controls onclick="event.stopPropagation(); openMediaLightbox('${p.media_url}', 'video')"></video><button class="expand-media-btn" type="button" onclick="openMediaLightbox('${p.media_url}', 'video')" aria-label="Expand video">↗</button></div>`
-        : `<div class="post-media-wrap" ondblclick="doubleTapLike(event, '${p.id}')"><img src="${p.media_url}" class="post-media" alt="Post image" onclick="openMediaLightbox('${p.media_url}', 'image')"><button class="expand-media-btn" type="button" onclick="openMediaLightbox('${p.media_url}', 'image')" aria-label="Expand image">↗</button></div>`;
+        ? `<div class="post-media-wrap"><video src="${p.media_url}" class="post-media" controls></video></div>`
+        : `<div class="post-media-wrap" ondblclick="doubleTapLike(event, '${p.id}')"><img src="${p.media_url}" class="post-media"></div>`;
     }
 
     let commentsHtml = '';
-    if(comments.length 2){
+    if (comments.length > 2){
       commentsHtml += `<button class="view-comments" onclick="this.style.display='none';this.nextElementSibling.style.display='block';">View all ${comments.length} comments</button>`;
       commentsHtml += `<div style="display:none;">`;
-      comments.forEach(c ={
+      comments.forEach(c => {
         commentsHtml += `<div class="comment-item"><a class="cap-user">${escapeHtml(c.profiles?.name || 'User')}</a>${escapeHtml(c.text)}</div>`;
       });
       commentsHtml += `</div>`;
     }
-    recentComments.forEach(c ={
+    recentComments.forEach(c => {
       commentsHtml += `<div class="comment-item"><a class="cap-user">${escapeHtml(c.profiles?.name || 'User')}</a>${escapeHtml(c.text)}</div>`;
     });
 
@@ -404,16 +389,11 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
     card.innerHTML = `
       <!-- Header -->
       <div class="post-header">
-  <a class="profile-link" href="profile.html?id=${p.author_id}"><img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}" alt="${escapeHtml(author.name || 'Member')}"></a>
-  <div class="post-header-info">
-  <a class="username" href="profile.html?id=${p.author_id}">${escapeHtml(author.name || 'Member')}</a>
+        <img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}">
+        <div class="post-header-info">
+          <a class="username">${escapeHtml(author.name || 'Member')}</a>
         </div>
-        <div class="post-menu-wrap">
-          <button class="post-more-btn" type="button" aria-label="Post options" onclick="togglePostMenu(this)">⋯</button>
-          <div class="post-menu" hidden>
-            ${p.author_id === currentUser.id ? `<button type="button" onclick="deletePost('${p.id}')">Delete post</button>` : `<button type="button" onclick="reportPost('${p.id}', this)">Report post</button>`}
-          </div>
-        </div>
+        <button class="post-more-btn">⋯</button>
       </div>
 
       <!-- Media -->
@@ -437,7 +417,7 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
 
       <!-- Details -->
       <div class="post-details">
-        <div class="like-count" id="likes-${p.id}">${likeCount 0 ? likeCount + ' like' + (likeCount 1 ? 's' : '') : ''}</div>
+        <div class="like-count" id="likes-${p.id}">${likeCount > 0 ? likeCount + ' like' + (likeCount > 1 ? 's' : '') : ''}</div>
         ${p.caption ? `<div class="post-caption-row"><a class="cap-user">${escapeHtml(author.name || 'Member')}</a><span class="cap-text">${escapeHtml(p.caption)}</span></div>` : ''}
         ${commentsHtml}
         <div class="post-time">${timeAgo(p.created_at)}</div>
@@ -445,7 +425,7 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
 
       <!-- Comment input -->
       <form class="post-comment-form" onsubmit="submitComment(event, '${p.id}')">
-        <input class="comment-input" type="text" placeholder="Add a comment..." oninput="this.nextElementSibling.classList.toggle('active', this.value.trim().length 0)">
+        <input class="comment-input" type="text" placeholder="Add a comment..." oninput="this.nextElementSibling.classList.toggle('active', this.value.trim().length > 0)">
         <button type="submit" class="post-comment-btn">Post</button>
       </form>
     `;
@@ -453,43 +433,12 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
   });
 }
 
-function togglePostMenu(button) {
-  const menu = button.nextElementSibling;
-  document.querySelectorAll('.post-menu').forEach(item ={ if (item !== menu) item.hidden = true; });
-  menu.hidden = !menu.hidden;
-}
-
-async function deletePost(postId) {
-  if (!currentUser || !confirm('Delete this post?')) return;
-  const { error } = await sb.from('posts').delete().eq('id', postId).eq('author_id', currentUser.id);
-  if (error) { console.error('[v0] Delete post failed:', error); alert('Unable to delete this post. Check your database permissions.'); return; }
-  loadFeed();
-}
-
-async function reportPost(postId, button) {
-  if (!currentUser) return;
-  button.disabled = true;
-  const { error } = await sb.from('post_reports').insert({ post_id: postId, reporter_id: currentUser.id });
-  if (error) {
-    console.error('[v0] Report post failed:', error);
-    alert('Reporting is not enabled yet. Apply migration-post-reports.sql to Supabase first.');
-    button.disabled = false;
-    return;
-  }
-  button.textContent = 'Reported';
-  button.closest('.post-menu').hidden = true;
-}
-
-document.addEventListener('click', event ={
-  if (!event.target.closest('.post-menu-wrap')) document.querySelectorAll('.post-menu').forEach(menu ={ menu.hidden = true; });
-});
-
 /* ---- Like / Unlike ---- */
 async function toggleLike(btn, postId){
   const isLiked = btn.classList.contains('liked');
   btn.classList.toggle('liked');
   btn.classList.add('like-bounce');
-  setTimeout(() =btn.classList.remove('like-bounce'), 300);
+  setTimeout(() => btn.classList.remove('like-bounce'), 300);
   btn.innerHTML = isLiked ? ICONS.heart : ICONS.heartFill;
 
   if(isLiked){
@@ -500,7 +449,7 @@ async function toggleLike(btn, postId){
   // Update count
   const { count } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
   const el = document.getElementById('likes-' + postId);
-  if(el) el.textContent = count 0 ? count + ' like' + (count 1 ? 's' : '') : '';
+  if(el) el.textContent = count > 0 ? count + ' like' + (count > 1 ? 's' : '') : '';
 }
 
 /* ---- Double-tap like ---- */
@@ -511,7 +460,7 @@ function doubleTapLike(e, postId){
   heart.className = 'heart-anim';
   heart.innerHTML = HEART_SVG;
   wrap.appendChild(heart);
-  setTimeout(() =heart.remove(), 1000);
+  setTimeout(() => heart.remove(), 1000);
 
   // Like the post if not already liked
   const btn = document.querySelector(`[data-post-id="${postId}"]`);
@@ -525,7 +474,7 @@ async function submitComment(e, postId){
   e.preventDefault();
   const input = e.target.querySelector('.comment-input');
   const text = input.value.trim();
-  if(!text) return;
+  if (!text) return;
   input.value = '';
   e.target.querySelector('.post-comment-btn').classList.remove('active');
 
