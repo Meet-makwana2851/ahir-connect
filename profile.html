@@ -32,6 +32,9 @@
           <span class="bio-name" id="profDisplayName">—</span>
           <span id="profBio"></span>
         </div>
+
+        <!-- Facebook-style detail grid -->
+        <div class="profile-detail-grid" id="detailGrid"></div>
       </div>
     </div>
 
@@ -51,17 +54,57 @@
 
 <!-- Edit Profile Modal -->
 <div class="modal-backdrop" id="editModal" style="display:none;">
-  <div class="modal-card">
+  <div class="modal-card" style="max-width:460px; max-height:85vh; overflow-y:auto;">
     <div class="modal-header">
       <span>Edit profile</span>
       <button class="modal-close" id="closeEditModal">✕</button>
     </div>
     <div class="modal-body">
-      <div class="field" style="margin-bottom:16px;">
+      <div class="field" style="margin-bottom:14px;">
         <label>Bio</label>
         <textarea id="editBio" rows="3" placeholder="Tell people about yourself..."></textarea>
       </div>
-      <button class="btn btn-primary" id="saveProfileBtn" style="border-radius:8px;">Save</button>
+
+      <div class="form-section-label" style="margin-top:0;">Profile Details</div>
+      <div class="field"><label>Residence City</label><input type="text" id="editCity"></div>
+      <div class="field"><label>Educational Background</label><input type="text" id="editEducation"></div>
+
+      <div class="field-row">
+        <div class="field"><label>Occupation</label>
+          <select id="editOccType">
+            <option value="student">Student</option>
+            <option value="government">Government Sector</option>
+            <option value="private">Private Sector</option>
+          </select>
+        </div>
+        <div class="field"><label>Field of Work</label>
+          <select id="editOccField">
+            <option value="IT">IT</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="Education">Education</option>
+            <option value="Business">Business</option>
+            <option value="Agriculture">Agriculture</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Finance">Finance</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="editOccOtherWrap" style="display:none;"><label>Please specify</label><input type="text" id="editOccOther"></div>
+
+      <div class="field"><label>Past Work Experience</label><textarea id="editPastExp" rows="2"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Birth Date</label><input type="date" id="editBirthDate"></div>
+        <div class="field"><label>Marital Status</label>
+          <select id="editMaritalStatus">
+            <option value="">Prefer not to say</option>
+            <option value="single">Single</option>
+            <option value="married">Married</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="saveProfileBtn" style="border-radius:8px; margin-top:6px;">Save</button>
     </div>
   </div>
 </div>
@@ -77,16 +120,67 @@ let currentUser, currentProfile;
   currentUser = ctx.user; currentProfile = ctx.profile;
   renderSidebar('profile', currentUser, currentProfile);
 
-  // Fill profile
   document.getElementById('profAvatar').src = currentProfile.avatar_url || defaultAvatar(currentProfile.name);
   document.getElementById('profName').textContent = currentProfile.name || 'Member';
   document.getElementById('profDisplayName').textContent = currentProfile.name || 'Member';
   document.getElementById('profBio').textContent = currentProfile.bio || '';
-  document.getElementById('editBio').value = currentProfile.bio || '';
+
+  renderDetailGrid(currentProfile);
+  fillEditForm(currentProfile);
 
   loadProfileStats();
   loadProfilePosts();
 })();
+
+function occLabel(p){
+  if(!p.occupation_type) return '';
+  const map = { student: 'Student', government: 'Government Sector', private: 'Private Sector' };
+  const base = map[p.occupation_type] || p.occupation_type;
+  return p.occupation_field ? `${base} — ${p.occupation_field}` : base;
+}
+function maritalLabel(v){
+  return v === 'single' ? 'Single' : v === 'married' ? 'Married' : '';
+}
+
+function renderDetailGrid(p){
+  const grid = document.getElementById('detailGrid');
+  const rows = [
+    ['Residence City', p.residence_city],
+    ['Education', p.education],
+    ['Occupation', occLabel(p)],
+    ['Past Experience', p.past_experience],
+    ['Birth Date', p.birth_date],
+    ['Marital Status', maritalLabel(p.marital_status)]
+  ].filter(r => r[1]);
+
+  if(rows.length === 0){
+    grid.innerHTML = `<div class="detail-item" style="grid-column:1/-1; color:var(--text-2);">No profile details added yet. Click "Edit profile" to add some.</div>`;
+    return;
+  }
+  grid.innerHTML = rows.map(r => `<div class="detail-item"><label>${r[0]}</label><span>${escapeHtml(String(r[1]))}</span></div>`).join('');
+}
+
+function fillEditForm(p){
+  document.getElementById('editBio').value = p.bio || '';
+  document.getElementById('editCity').value = p.residence_city || '';
+  document.getElementById('editEducation').value = p.education || '';
+  document.getElementById('editOccType').value = p.occupation_type || 'student';
+  const knownFields = ['IT','Healthcare','Education','Business','Agriculture','Engineering','Finance'];
+  if(p.occupation_field && !knownFields.includes(p.occupation_field)){
+    document.getElementById('editOccField').value = 'other';
+    document.getElementById('editOccOther').value = p.occupation_field;
+    document.getElementById('editOccOtherWrap').style.display = 'block';
+  } else {
+    document.getElementById('editOccField').value = p.occupation_field || 'IT';
+  }
+  document.getElementById('editPastExp').value = p.past_experience || '';
+  document.getElementById('editBirthDate').value = p.birth_date || '';
+  document.getElementById('editMaritalStatus').value = p.marital_status || '';
+}
+
+document.getElementById('editOccField').addEventListener('change', (e) => {
+  document.getElementById('editOccOtherWrap').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
 
 async function loadProfileStats(){
   const [postsRes, friendsRes] = await Promise.all([
@@ -117,7 +211,6 @@ async function loadProfilePosts(){
           : `<img src="${p.media_url}" loading="lazy">`}
       </div>`;
     } else {
-      // Text-only post — show caption as tile
       return `<div class="profile-grid-item" style="display:flex;align-items:center;justify-content:center;padding:16px;font-size:13px;color:var(--text);background:var(--surface-2);text-align:center;">
         ${escapeHtml(p.caption).substring(0, 80)}${p.caption.length > 80 ? '…' : ''}
       </div>`;
@@ -138,11 +231,26 @@ document.getElementById('editModal').addEventListener('click', (e) => {
 });
 
 document.getElementById('saveProfileBtn').addEventListener('click', async () => {
-  const bio = document.getElementById('editBio').value.trim();
-  const { error } = await sb.from('profiles').update({ bio }).eq('id', currentUser.id);
+  const occField = document.getElementById('editOccField').value;
+  const occOther = document.getElementById('editOccOther').value.trim();
+
+  const updates = {
+    bio: document.getElementById('editBio').value.trim(),
+    residence_city: document.getElementById('editCity').value.trim(),
+    education: document.getElementById('editEducation').value.trim(),
+    occupation_type: document.getElementById('editOccType').value,
+    occupation_field: occField === 'other' ? occOther : occField,
+    past_experience: document.getElementById('editPastExp').value.trim(),
+    birth_date: document.getElementById('editBirthDate').value || null,
+    marital_status: document.getElementById('editMaritalStatus').value
+  };
+
+  const { error } = await sb.from('profiles').update(updates).eq('id', currentUser.id);
   if(error){ alert('Error: ' + error.message); return; }
-  document.getElementById('profBio').textContent = bio;
-  currentProfile.bio = bio;
+
+  Object.assign(currentProfile, updates);
+  document.getElementById('profBio').textContent = updates.bio;
+  renderDetailGrid(currentProfile);
   document.getElementById('closeEditModal').click();
 });
 </script>
