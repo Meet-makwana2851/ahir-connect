@@ -86,6 +86,11 @@
         </div>
     </div>
 
+    <div class="media-lightbox" id="profileMediaLightbox" hidden role="dialog" aria-modal="true" aria-label="Expanded profile post">
+        <button class="lightbox-close" id="profileLightboxClose" aria-label="Close expanded media">×</button>
+        <div class="lightbox-content" id="profileLightboxContent"></div>
+    </div>
+
     <!-- Edit Profile Modal -->
     <div class="modal-backdrop" id="editModal" style="display:none;">
         <div class="modal-card" style="max-width:460px; max-height:85vh; overflow-y:auto;">
@@ -153,7 +158,19 @@
             if (!ctx) return;
             currentUser = ctx.user;
             currentProfile = ctx.profile;
-            renderSidebar('profile', currentUser, currentProfile);
+            const requestedId = new URLSearchParams(window.location.search).get('id');
+            if (requestedId && requestedId !== currentUser.id) {
+                const {
+                    data: viewedProfile
+                } = await sb.from('profiles').select('*').eq('id', requestedId).single();
+                if (!viewedProfile) {
+                    window.location.href = 'friends.html';
+                    return;
+                }
+                currentProfile = viewedProfile;
+                document.getElementById('editProfileBtn').style.display = 'none';
+            }
+            renderSidebar('profile', currentUser, ctx.profile);
 
             document.getElementById('profAvatar').src = currentProfile.avatar_url || defaultAvatar(currentProfile.name);
             document.getElementById('profName').textContent = currentProfile.name || 'Member';
@@ -256,7 +273,7 @@
                 sb.from('posts').select('*', {
                     count: 'exact',
                     head: true
-                }).eq('author_id', currentUser.id),
+                }).eq('author_id', currentProfile.id),
                 sb.from('friendships').select('*', {
                     count: 'exact',
                     head: true
@@ -286,8 +303,8 @@
                         if (p.media_url) {
                             return `<div class="profile-grid-item">
         ${p.media_type === 'video'
-          ? `<video src="${p.media_url}" muted></video>`
-          : `<img src="${p.media_url}" loading="lazy">`}
+          ? `<video src="${p.media_url}" muted onclick="openProfileMedia('${p.media_url}', 'video')"></video>`
+          : `<img src="${p.media_url}" loading="lazy" onclick="openProfileMedia('${p.media_url}', 'image')">`}
       </div>`;
     } else {
       return `<div class="profile-grid-item" style="display:flex;align-items:center;justify-content:center;padding:16px;font-size:13px;color:var(--text);background:var(--surface-2);text-align:center;">
@@ -296,6 +313,16 @@
     }
   }).join('');
 }
+
+const profileLightbox = document.getElementById('profileMediaLightbox');
+const profileLightboxContent = document.getElementById('profileLightboxContent');
+function closeProfileMedia() { profileLightbox.hidden = true; profileLightboxContent.innerHTML = ''; }
+window.openProfileMedia = (url, type) => {
+  profileLightboxContent.innerHTML = type === 'video' ? `<video src="${url}" controls autoplay></video>` : `<img src="${url}" alt="Expanded profile post">`;
+  profileLightbox.hidden = false;
+};
+document.getElementById('profileLightboxClose').addEventListener('click', closeProfileMedia);
+profileLightbox.addEventListener('click', e => { if (e.target === profileLightbox) closeProfileMedia(); });
 
 /* Edit profile modal */
 document.getElementById('editProfileBtn').addEventListener('click', () => {

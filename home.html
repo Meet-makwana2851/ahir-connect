@@ -41,6 +41,11 @@
         <div class="story-viewer-progress" id="storyProgress"></div>
     </div>
 
+    <div class="media-lightbox" id="mediaLightbox" hidden role="dialog" aria-modal="true" aria-label="Expanded post media">
+        <button class="lightbox-close" id="closeLightbox" aria-label="Close expanded media">×</button>
+        <div class="lightbox-content" id="lightboxContent"></div>
+    </div>
+
     <!-- Create Post Modal -->
     <div class="modal-backdrop" id="createModal" style="display:none;">
         <div class="modal-card">
@@ -77,11 +82,6 @@
             renderSidebar('home', currentUser, currentProfile);
             loadStories();
             loadFeed();
-
-            if (new URLSearchParams(window.location.search).get('create') === '1') {
-                openCreateModal();
-                window.history.replaceState({}, document.title, 'home.html');
-            }
         })();
 
         /* ---- Create Post Modal ---- */
@@ -89,6 +89,24 @@
             document.getElementById('createModal').style.display = 'flex';
             document.getElementById('postCaption').focus();
         }
+        const mediaLightbox = document.getElementById('mediaLightbox');
+        const lightboxContent = document.getElementById('lightboxContent');
+
+        function closeMediaLightbox() {
+            mediaLightbox.hidden = true;
+            lightboxContent.innerHTML = '';
+        }
+        window.openMediaLightbox = (url, type) => {
+            lightboxContent.innerHTML = type === 'video' ? `<video src="${url}" controls autoplay></video>` : `<img src="${url}" alt="Expanded post media">`;
+            mediaLightbox.hidden = false;
+        };
+        document.getElementById('closeLightbox').addEventListener('click', closeMediaLightbox);
+        mediaLightbox.addEventListener('click', e => {
+            if (e.target === mediaLightbox) closeMediaLightbox();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !mediaLightbox.hidden) closeMediaLightbox();
+        });
         document.getElementById('closeCreateModal').addEventListener('click', () => {
             document.getElementById('createModal').style.display = 'none';
             document.getElementById('postCaption').value = '';
@@ -372,8 +390,8 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
     let mediaHtml = '';
     if(p.media_url){
       mediaHtml = p.media_type === 'video'
-        ? `<div class="post-media-wrap"><video src="${p.media_url}" class="post-media" controls></video></div>`
-        : `<div class="post-media-wrap" ondblclick="doubleTapLike(event, '${p.id}')"><img src="${p.media_url}" class="post-media"></div>`;
+        ? `<div class="post-media-wrap"><video src="${p.media_url}" class="post-media" controls onclick="event.stopPropagation(); openMediaLightbox('${p.media_url}', 'video')"></video><button class="expand-media-btn" type="button" onclick="openMediaLightbox('${p.media_url}', 'video')" aria-label="Expand video">↗</button></div>`
+        : `<div class="post-media-wrap" ondblclick="doubleTapLike(event, '${p.id}')"><img src="${p.media_url}" class="post-media" alt="Post image" onclick="openMediaLightbox('${p.media_url}', 'image')"><button class="expand-media-btn" type="button" onclick="openMediaLightbox('${p.media_url}', 'image')" aria-label="Expand image">↗</button></div>`;
     }
 
     let commentsHtml = '';
@@ -394,11 +412,16 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
     card.innerHTML = `
       <!-- Header -->
       <div class="post-header">
-        <img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}">
-        <div class="post-header-info">
-          <a class="username">${escapeHtml(author.name || 'Member')}</a>
+  <a class="profile-link" href="profile.html?id=${p.author_id}"><img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}" alt="${escapeHtml(author.name || 'Member')}"></a>
+  <div class="post-header-info">
+  <a class="username" href="profile.html?id=${p.author_id}">${escapeHtml(author.name || 'Member')}</a>
         </div>
-        <button class="post-more-btn">⋯</button>
+        <div class="post-menu-wrap">
+          <button class="post-more-btn" type="button" aria-label="Post options" onclick="togglePostMenu(this)">⋯</button>
+          <div class="post-menu" hidden>
+            ${p.author_id === currentUser.id ? `<button type="button" onclick="deletePost('${p.id}')">Delete post</button>` : `<button type="button" onclick="reportPost('${p.id}', this)">Report post</button>`}
+          </div>
+        </div>
       </div>
 
       <!-- Media -->
@@ -437,6 +460,37 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
     listEl.appendChild(card);
   });
 }
+
+function togglePostMenu(button) {
+  const menu = button.nextElementSibling;
+  document.querySelectorAll('.post-menu').forEach(item => { if (item !== menu) item.hidden = true; });
+  menu.hidden = !menu.hidden;
+}
+
+async function deletePost(postId) {
+  if (!currentUser || !confirm('Delete this post?')) return;
+  const { error } = await sb.from('posts').delete().eq('id', postId).eq('author_id', currentUser.id);
+  if (error) { console.error('[v0] Delete post failed:', error); alert('Unable to delete this post. Check your database permissions.'); return; }
+  loadFeed();
+}
+
+async function reportPost(postId, button) {
+  if (!currentUser) return;
+  button.disabled = true;
+  const { error } = await sb.from('post_reports').insert({ post_id: postId, reporter_id: currentUser.id });
+  if (error) {
+    console.error('[v0] Report post failed:', error);
+    alert('Reporting is not enabled yet. Apply migration-post-reports.sql to Supabase first.');
+    button.disabled = false;
+    return;
+  }
+  button.textContent = 'Reported';
+  button.closest('.post-menu').hidden = true;
+}
+
+document.addEventListener('click', event => {
+  if (!event.target.closest('.post-menu-wrap')) document.querySelectorAll('.post-menu').forEach(menu => { menu.hidden = true; });
+});
 
 /* ---- Like / Unlike ---- */
 async function toggleLike(btn, postId){
