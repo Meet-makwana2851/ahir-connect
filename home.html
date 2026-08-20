@@ -77,6 +77,11 @@
             renderSidebar('home', currentUser, currentProfile);
             loadStories();
             loadFeed();
+
+            if (new URLSearchParams(window.location.search).get('create') === '1') {
+                openCreateModal();
+                window.history.replaceState({}, document.title, 'home.html');
+            }
         })();
 
         /* ---- Create Post Modal ---- */
@@ -484,4 +489,4 @@ async function submitComment(e, postId){
     </script>
 </body>
 
-</html
+</html>
