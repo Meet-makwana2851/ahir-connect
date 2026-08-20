@@ -41,7 +41,7 @@
                     session
                 }
             } = await sb.auth.getSession();
-            if (session ? .user) window.location.href = 'home.html';
+            if (session.user) window.location.href = 'home.html';
         })();
 
         document.getElementById('loginForm').addEventListener('submit', async(e) => {

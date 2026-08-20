@@ -85,7 +85,7 @@
                 alert(error.message);
                 return;
             }
-            document.getElementById('notif-' + id) ? .remove();
+            document.getElementById('notif-' + id).remove();
             refreshRequestDot(currentUser.id);
         }
 
@@ -93,10 +93,10 @@
             await sb.from('friend_requests').update({
                 status: 'declined'
             }).eq('id', id);
-            document.getElementById('notif-' + id) ? .remove();
+            document.getElementById('notif-' + id).remove();
             refreshRequestDot(currentUser.id);
         }
     </script>
 </body>
 
-</html
+</html>
