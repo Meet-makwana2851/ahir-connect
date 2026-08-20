@@ -26,11 +26,9 @@
                 <input type="text" id="userSearch" placeholder="Search">
             </div>
 
-            <!-- Search results (hidden by default) -->
-            <div id="searchResults" style="display:none;"></div>
-
-            <!-- Explore grid (visible by default) -->
-            <div class="explore-grid" id="exploreGrid"></div>
+            <div class="directory-heading">
+                <h1>Community members</h1><span id="memberCount"></span></div>
+            <div id="searchResults" class="member-directory"></div>
 
         </div>
     </div>
@@ -46,8 +44,23 @@
             currentUser = ctx.user;
             currentProfile = ctx.profile;
             renderSidebar('search', currentUser, currentProfile);
-            loadExplore();
+            loadMembers();
         })();
+
+        /* ---- Member directory ---- */
+        async function loadMembers(term = '') {
+            const {
+                data: members,
+                error
+            } = await sb.from('profiles').select('id, name, avatar_url, bio').ilike('name', `%${term}%`).order('name');
+            const results = document.getElementById('searchResults');
+            if (error) {
+                results.innerHTML = `<div class="empty-state">Unable to load members.</div>`;
+                return;
+            }
+            document.getElementById('memberCount').textContent = `${(members || []).length} members`;
+            results.innerHTML = (members || []).map(u => `<div class="user-row"><a class="profile-link" href="profile.html?id=${u.id}"><img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}" alt="${escapeHtml(u.name || 'Member')}"></a><div class="user-row-info"><a class="name" href="profile.html?id=${u.id}">${escapeHtml(u.name || 'Member')}</a><div class="sub">${escapeHtml(u.bio || '')}</div></div></div>`).join('') || '<div class="empty-state">No members found.</div>';
+        }
 
         /* ---- Explore grid: all posts with media ---- */
         async function loadExplore() {
@@ -90,12 +103,7 @@ let searchTimeout;
 document.getElementById('userSearch').addEventListener('input', (e) => {
   clearTimeout(searchTimeout);
   const term = e.target.value.trim();
-  if(!term){
-    document.getElementById('searchResults').style.display = 'none';
-    document.getElementById('exploreGrid').style.display = 'grid';
-    return;
-  }
-  searchTimeout = setTimeout(() => searchUsers(term), 350);
+  searchTimeout = setTimeout(() => loadMembers(term), 250);
 });
 
 async function searchUsers(term){
@@ -139,7 +147,7 @@ async function searchUsers(term){
 async function sendFriendRequest(toId){
   const { error } = await sb.from('friend_requests').insert({ from_id: currentUser.id, to_id: toId });
   if(error){ alert(error.message); return; }
-  searchUsers(document.getElementById('userSearch').value.trim());
+  loadMembers(document.getElementById('userSearch').value.trim());
 }
     </script>
 </body>
