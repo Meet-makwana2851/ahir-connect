@@ -1,65 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Search — AhirConnect</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="shared/style.css">
-<script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search — AhirConnect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
 </head>
+
 <body>
-<div class="app-shell">
-  <div id="sidebarMount"></div>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
 
-  <div class="main-panel main-panel-wide">
+        <div class="main-panel main-panel-wide">
 
-    <!-- Search bar -->
-    <div class="search-page-bar">
-      <span class="search-icon">
+            <!-- Search bar -->
+            <div class="search-page-bar">
+                <span class="search-icon">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </span>
-      <input type="text" id="userSearch" placeholder="Search">
+                <input type="text" id="userSearch" placeholder="Search">
+            </div>
+
+            <!-- Search results (hidden by default) -->
+            <div id="searchResults" style="display:none;"></div>
+
+            <!-- Explore grid (visible by default) -->
+            <div class="explore-grid" id="exploreGrid"></div>
+
+        </div>
     </div>
 
-    <!-- Search results (hidden by default) -->
-    <div id="searchResults" style="display:none;"></div>
+    <script src="shared/config.js"></script>
+    <script src="shared/utils.js"></script>
+    <script>
+        let currentUser, currentProfile;
 
-    <!-- Explore grid (visible by default) -->
-    <div class="explore-grid" id="exploreGrid"></div>
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            currentUser = ctx.user;
+            currentProfile = ctx.profile;
+            renderSidebar('search', currentUser, currentProfile);
+            loadExplore();
+        })();
 
-  </div>
-</div>
+        /* ---- Explore grid: all posts with media ---- */
+        async function loadExplore() {
+            const grid = document.getElementById('exploreGrid');
+            const {
+                data: posts
+            } = await sb
+                .from('posts')
+                .select('id, media_url, media_type')
+                .neq('media_url', '')
+                .order('created_at', {
+                    ascending: false
+                })
+                .limit(30);
 
-<script src="shared/config.js"></script>
-<script src="shared/utils.js"></script>
-<script>
-let currentUser, currentProfile;
+            if (!posts || posts.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">🔍</div>No posts to explore yet.</div>`;
+                return;
+            }
 
-(async () => {
-  const ctx = await requireAuth();
-  if(!ctx) return;
-  currentUser = ctx.user; currentProfile = ctx.profile;
-  renderSidebar('search', currentUser, currentProfile);
-  loadExplore();
-})();
-
-/* ---- Explore grid: all posts with media ---- */
-async function loadExplore(){
-  const grid = document.getElementById('exploreGrid');
-  const { data: posts } = await sb
-    .from('posts')
-    .select('id, media_url, media_type')
-    .neq('media_url', '')
-    .order('created_at', { ascending: false })
-    .limit(30);
-
-  if(!posts || posts.length === 0){
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">🔍</div>No posts to explore yet.</div>`;
-    return;
-  }
-
-  grid.innerHTML = posts.map(p => `
+            grid.innerHTML = posts.map(p => `
     <div class="explore-item">
       ${p.media_type === 'video'
         ? `<video src="${p.media_url}" muted></video>`
@@ -132,6 +141,7 @@ async function sendFriendRequest(toId){
   if(error){ alert(error.message); return; }
   searchUsers(document.getElementById('userSearch').value.trim());
 }
-</script>
+    </script>
 </body>
+
 </html>

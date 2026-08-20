@@ -1,177 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AhirConnect</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="shared/style.css">
-<script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AhirConnect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
 </head>
+
 <body>
-<div class="app-shell">
-  <div id="sidebarMount"></div>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
 
-  <div class="main-panel">
-    <!-- Stories row -->
-    <div class="stories-row" id="storiesRow"></div>
-    <!-- Hidden file input for story upload -->
-    <input type="file" id="storyFileInput" accept="image/*,video/*" style="display:none;">
+        <div class="main-panel">
+            <!-- Stories row -->
+            <div class="stories-row" id="storiesRow"></div>
+            <!-- Hidden file input for story upload -->
+            <input type="file" id="storyFileInput" accept="image/*,video/*" style="display:none;">
 
-    <!-- Feed -->
-    <div id="feedList"></div>
-  </div>
-</div>
-
-<!-- Story Viewer Modal -->
-<div class="story-viewer" id="storyViewer" style="display:none;">
-  <div class="story-viewer-header">
-    <div class="story-viewer-user">
-      <img class="avatar" id="storyViewerAvatar" src="">
-      <span id="storyViewerName"></span>
-      <span class="story-viewer-time" id="storyViewerTime"></span>
+            <!-- Feed -->
+            <div id="feedList"></div>
+        </div>
     </div>
-    <button class="story-viewer-close" id="closeStoryViewer">✕</button>
-  </div>
-  <div class="story-viewer-media" id="storyViewerMedia"></div>
-  <div class="story-viewer-progress" id="storyProgress"></div>
-</div>
 
-<!-- Create Post Modal -->
-<div class="modal-backdrop" id="createModal" style="display:none;">
-  <div class="modal-card">
-    <div class="modal-header">
-      <span>Create new post</span>
-      <button class="modal-close" id="closeCreateModal">✕</button>
+    <!-- Story Viewer Modal -->
+    <div class="story-viewer" id="storyViewer" style="display:none;">
+        <div class="story-viewer-header">
+            <div class="story-viewer-user">
+                <img class="avatar" id="storyViewerAvatar" src="">
+                <span id="storyViewerName"></span>
+                <span class="story-viewer-time" id="storyViewerTime"></span>
+            </div>
+            <button class="story-viewer-close" id="closeStoryViewer">✕</button>
+        </div>
+        <div class="story-viewer-media" id="storyViewerMedia"></div>
+        <div class="story-viewer-progress" id="storyProgress"></div>
     </div>
-    <div class="modal-body">
-      <textarea id="postCaption" placeholder="Write a caption..."></textarea>
-      <div id="mediaPreviewWrap"></div>
-    </div>
-    <div class="modal-footer">
-      <label class="file-label">
+
+    <!-- Create Post Modal -->
+    <div class="modal-backdrop" id="createModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span>Create new post</span>
+                <button class="modal-close" id="closeCreateModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="postCaption" placeholder="Write a caption..."></textarea>
+                <div id="mediaPreviewWrap"></div>
+            </div>
+            <div class="modal-footer">
+                <label class="file-label">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         Photo / Video
         <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;">
       </label>
-      <button class="btn btn-primary" style="width:auto;padding:8px 24px;border-radius:8px;font-size:14px;" id="postBtn">Share</button>
+                <button class="btn btn-primary" style="width:auto;padding:8px 24px;border-radius:8px;font-size:14px;" id="postBtn">Share</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<script src="shared/config.js"></script>
-<script src="shared/utils.js"></script>
-<script>
-let currentUser, currentProfile, mediaFile = null, feedChannel = null;
+    <script src="shared/config.js"></script>
+    <script src="shared/utils.js"></script>
+    <script>
+        let currentUser, currentProfile, mediaFile = null,
+            feedChannel = null;
 
-(async () => {
-  const ctx = await requireAuth();
-  if(!ctx) return;
-  currentUser = ctx.user; currentProfile = ctx.profile;
-  renderSidebar('home', currentUser, currentProfile);
-  loadStories();
-  loadFeed();
-})();
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            currentUser = ctx.user;
+            currentProfile = ctx.profile;
+            renderSidebar('home', currentUser, currentProfile);
+            loadStories();
+            loadFeed();
+        })();
 
-/* ---- Create Post Modal ---- */
-function openCreateModal(){
-  document.getElementById('createModal').style.display = 'flex';
-  document.getElementById('postCaption').focus();
-}
-document.getElementById('closeCreateModal').addEventListener('click', () => {
-  document.getElementById('createModal').style.display = 'none';
-  document.getElementById('postCaption').value = '';
-  document.getElementById('mediaPreviewWrap').innerHTML = '';
-  document.getElementById('mediaInput').value = '';
-  mediaFile = null;
-});
-document.getElementById('createModal').addEventListener('click', (e) => {
-  if(e.target === document.getElementById('createModal')){
-    document.getElementById('closeCreateModal').click();
-  }
-});
+        /* ---- Create Post Modal ---- */
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+            document.getElementById('postCaption').focus();
+        }
+        document.getElementById('closeCreateModal').addEventListener('click', () => {
+            document.getElementById('createModal').style.display = 'none';
+            document.getElementById('postCaption').value = '';
+            document.getElementById('mediaPreviewWrap').innerHTML = '';
+            document.getElementById('mediaInput').value = '';
+            mediaFile = null;
+        });
+        document.getElementById('createModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('createModal')) {
+                document.getElementById('closeCreateModal').click();
+            }
+        });
 
-document.getElementById('mediaInput').addEventListener('change', (e) => {
-  mediaFile = e.target.files[0];
-  const wrap = document.getElementById('mediaPreviewWrap');
-  wrap.innerHTML = '';
-  if(mediaFile){
-    const url = URL.createObjectURL(mediaFile);
-    wrap.innerHTML = mediaFile.type.startsWith('video')
-      ? `<video src="${url}" class="preview-media" controls></video>`
-      : `<img src="${url}" class="preview-media">`;
-  }
-});
+        document.getElementById('mediaInput').addEventListener('change', (e) => {
+            mediaFile = e.target.files[0];
+            const wrap = document.getElementById('mediaPreviewWrap');
+            wrap.innerHTML = '';
+            if (mediaFile) {
+                const url = URL.createObjectURL(mediaFile);
+                wrap.innerHTML = mediaFile.type.startsWith('video') ?
+                    `<video src="${url}" class="preview-media" controls></video>` :
+                    `<img src="${url}" class="preview-media">`;
+            }
+        });
 
-document.getElementById('postBtn').onclick = async () => {
-  const caption = document.getElementById('postCaption').value.trim();
-  if(!caption && !mediaFile){ alert('Write something or attach a photo first.'); return; }
-  const btn = document.getElementById('postBtn');
-  btn.disabled = true; btn.textContent = 'Sharing...';
-  try{
-    let mediaUrl = '', mediaType = '';
-    if(mediaFile){
-      mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
-      const path = `${currentUser.id}/${Date.now()}_${mediaFile.name}`;
-      const { error: upErr } = await sb.storage.from('posts').upload(path, mediaFile);
-      if(upErr) throw upErr;
-      const { data: urlData } = sb.storage.from('posts').getPublicUrl(path);
-      mediaUrl = urlData.publicUrl;
-    }
-    const { error } = await sb.from('posts').insert({
-      author_id: currentUser.id, caption, media_url: mediaUrl, media_type: mediaType
-    });
-    if(error) throw error;
-    document.getElementById('closeCreateModal').click();
-    loadFeed();
-  }catch(err){ alert('Error posting: ' + err.message); }
-  btn.disabled = false; btn.textContent = 'Share';
-};
+        document.getElementById('postBtn').onclick = async() => {
+            const caption = document.getElementById('postCaption').value.trim();
+            if (!caption && !mediaFile) {
+                alert('Write something or attach a photo first.');
+                return;
+            }
+            const btn = document.getElementById('postBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sharing...';
+            try {
+                let mediaUrl = '',
+                    mediaType = '';
+                if (mediaFile) {
+                    mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
+                    const path = `${currentUser.id}/${Date.now()}_${mediaFile.name}`;
+                    const {
+                        error: upErr
+                    } = await sb.storage.from('posts').upload(path, mediaFile);
+                    if (upErr) throw upErr;
+                    const {
+                        data: urlData
+                    } = sb.storage.from('posts').getPublicUrl(path);
+                    mediaUrl = urlData.publicUrl;
+                }
+                const {
+                    error
+                } = await sb.from('posts').insert({
+                    author_id: currentUser.id,
+                    caption,
+                    media_url: mediaUrl,
+                    media_type: mediaType
+                });
+                if (error) throw error;
+                document.getElementById('closeCreateModal').click();
+                loadFeed();
+            } catch (err) {
+                alert('Error posting: ' + err.message);
+            }
+            btn.disabled = false;
+            btn.textContent = 'Share';
+        };
 
-/* ---- Stories (only users with active stories in last 24h) ---- */
-async function loadStories(){
-  const row = document.getElementById('storiesRow');
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        /* ---- Stories (only users with active stories in last 24h) ---- */
+        async function loadStories() {
+            const row = document.getElementById('storiesRow');
+            const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  // Get all active stories (last 24h)
-  const { data: stories } = await sb.from('stories')
-    .select('id, author_id, media_url, media_type, created_at, profiles:author_id(name, avatar_url)')
-    .gt('created_at', cutoff)
-    .order('created_at', { ascending: false });
+            // Get all active stories (last 24h)
+            const {
+                data: stories
+            } = await sb.from('stories')
+                .select('id, author_id, media_url, media_type, created_at, profiles:author_id(name, avatar_url)')
+                .gt('created_at', cutoff)
+                .order('created_at', {
+                    ascending: false
+                });
 
-  // Get which stories the current user has viewed
-  const storyIds = (stories || []).map(s => s.id);
-  let viewedSet = new Set();
-  if(storyIds.length > 0){
-    const { data: views } = await sb.from('story_views')
-      .select('story_id')
-      .eq('viewer_id', currentUser.id)
-      .in('story_id', storyIds);
-    viewedSet = new Set((views || []).map(v => v.story_id));
-  }
+            // Get which stories the current user has viewed
+            const storyIds = (stories || []).map(s => s.id);
+            let viewedSet = new Set();
+            if (storyIds.length > 0) {
+                const {
+                    data: views
+                } = await sb.from('story_views')
+                    .select('story_id')
+                    .eq('viewer_id', currentUser.id)
+                    .in('story_id', storyIds);
+                viewedSet = new Set((views || []).map(v => v.story_id));
+            }
 
-  // Group stories by author
-  const authorMap = new Map();
-  (stories || []).forEach(s => {
-    if(!authorMap.has(s.author_id)){
-      authorMap.set(s.author_id, {
-        author_id: s.author_id,
-        profile: s.profiles || {},
-        stories: [],
-        allSeen: true
-      });
-    }
-    const group = authorMap.get(s.author_id);
-    group.stories.push(s);
-    if(!viewedSet.has(s.id)) group.allSeen = false;
-  });
+            // Group stories by author
+            const authorMap = new Map();
+            (stories || []).forEach(s => {
+                if (!authorMap.has(s.author_id)) {
+                    authorMap.set(s.author_id, {
+                        author_id: s.author_id,
+                        profile: s.profiles || {},
+                        stories: [],
+                        allSeen: true
+                    });
+                }
+                const group = authorMap.get(s.author_id);
+                group.stories.push(s);
+                if (!viewedSet.has(s.id)) group.allSeen = false;
+            });
 
-  // Check if current user has an active story
-  const myStoryGroup = authorMap.get(currentUser.id);
-  const hasMyStory = !!myStoryGroup;
+            // Check if current user has an active story
+            const myStoryGroup = authorMap.get(currentUser.id);
+            const hasMyStory = !!myStoryGroup;
 
-  // "Your story" — always shown first
-  let html = `<div class="story-item" onclick="${hasMyStory ? `viewStoryGroup('${currentUser.id}')` : `document.getElementById('storyFileInput').click()`}">
+            // "Your story" — always shown first
+            let html = `<div class="story-item" onclick="${hasMyStory ? `viewStoryGroup('${currentUser.id}')` : `document.getElementById('storyFileInput').click()`}">
     <div class="story-ring ${hasMyStory ? (myStoryGroup.allSeen ? 'seen' : '') : 'no-story'}">
       <img src="${currentProfile.avatar_url || defaultAvatar(currentProfile.name)}">
     </div>
@@ -452,6 +481,7 @@ async function submitComment(e, postId){
   await sb.from('comments').insert({ post_id: postId, user_id: currentUser.id, text });
   loadFeed(); // Refresh to show new comment
 }
-</script>
+    </script>
 </body>
-</html>
+
+</html

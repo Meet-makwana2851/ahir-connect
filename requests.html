@@ -1,57 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notifications — AhirConnect</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="shared/style.css">
-<script>if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark");</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications — AhirConnect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
 </head>
+
 <body>
-<div class="app-shell">
-  <div id="sidebarMount"></div>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
 
-  <div class="main-panel">
-    <h2 style="font-size:24px;font-weight:700;margin-bottom:24px;">Notifications</h2>
+        <div class="main-panel">
+            <h2 style="font-size:24px;font-weight:700;margin-bottom:24px;">Notifications</h2>
 
-    <div id="notifList"></div>
-  </div>
-</div>
+            <div id="notifList"></div>
+        </div>
+    </div>
 
-<script src="shared/config.js"></script>
-<script src="shared/utils.js"></script>
-<script>
-let currentUser, currentProfile;
+    <script src="shared/config.js"></script>
+    <script src="shared/utils.js"></script>
+    <script>
+        let currentUser, currentProfile;
 
-(async () => {
-  const ctx = await requireAuth();
-  if(!ctx) return;
-  currentUser = ctx.user; currentProfile = ctx.profile;
-  renderSidebar('notifications', currentUser, currentProfile);
-  loadNotifications();
-})();
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            currentUser = ctx.user;
+            currentProfile = ctx.profile;
+            renderSidebar('notifications', currentUser, currentProfile);
+            loadNotifications();
+        })();
 
-async function loadNotifications(){
-  const listEl = document.getElementById('notifList');
+        async function loadNotifications() {
+            const listEl = document.getElementById('notifList');
 
-  const { data: requests } = await sb
-    .from('friend_requests')
-    .select('*, profiles:from_id(name, avatar_url)')
-    .eq('to_id', currentUser.id)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false });
+            const {
+                data: requests
+            } = await sb
+                .from('friend_requests')
+                .select('*, profiles:from_id(name, avatar_url)')
+                .eq('to_id', currentUser.id)
+                .eq('status', 'pending')
+                .order('created_at', {
+                    ascending: false
+                });
 
-  if(!requests || requests.length === 0){
-    listEl.innerHTML = `<div class="empty-state"><div class="big">💛</div>No new notifications</div>`;
-    return;
-  }
+            if (!requests || requests.length === 0) {
+                listEl.innerHTML = `<div class="empty-state"><div class="big">💛</div>No new notifications</div>`;
+                return;
+            }
 
-  listEl.innerHTML = `<div class="notif-section-title">Follow Requests</div>`;
+            listEl.innerHTML = `<div class="notif-section-title">Follow Requests</div>`;
 
-  requests.forEach(r => {
-    const from = r.profiles || {};
-    listEl.innerHTML += `
+            requests.forEach(r => {
+                const from = r.profiles || {};
+                listEl.innerHTML += `
       <div class="notif-item" id="notif-${r.id}">
         <img class="avatar" src="${from.avatar_url || defaultAvatar(from.name)}">
         <div class="notif-item-body">
@@ -63,21 +72,31 @@ async function loadNotifications(){
           <button class="small-btn btn-decline" onclick="declineReq('${r.id}')">Delete</button>
         </div>
       </div>`;
-  });
-}
+            });
+        }
 
-async function acceptReq(id){
-  const { error } = await sb.rpc('accept_friend_request', { request_id: id });
-  if(error){ alert(error.message); return; }
-  document.getElementById('notif-' + id)?.remove();
-  refreshRequestDot(currentUser.id);
-}
+        async function acceptReq(id) {
+            const {
+                error
+            } = await sb.rpc('accept_friend_request', {
+                request_id: id
+            });
+            if (error) {
+                alert(error.message);
+                return;
+            }
+            document.getElementById('notif-' + id) ? .remove();
+            refreshRequestDot(currentUser.id);
+        }
 
-async function declineReq(id){
-  await sb.from('friend_requests').update({ status: 'declined' }).eq('id', id);
-  document.getElementById('notif-' + id)?.remove();
-  refreshRequestDot(currentUser.id);
-}
-</script>
+        async function declineReq(id) {
+            await sb.from('friend_requests').update({
+                status: 'declined'
+            }).eq('id', id);
+            document.getElementById('notif-' + id) ? .remove();
+            refreshRequestDot(currentUser.id);
+        }
+    </script>
 </body>
-</html>
+
+</html
