@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up — AhirSetu</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
+</head>
+
+<body>
+    <div class="auth-wrap">
+        <div class="auth-card" style="max-width:380px; border-radius:18px; border:1px solid var(--border-gold); box-shadow:var(--shadow-md);">
+            <div class="brand-row">
+                <span class="brand"><span style="color:var(--krishna-blue);">🪶 Ahir</span><span style="color:var(--peacock-teal);">Setu</span></span>
+            </div>
+            <div class="tagline" style="color:var(--pitambar-gold); font-weight:700; margin-bottom:18px;">
+                || જય મુરલીધર ||<br>
+                <span style="color:var(--text-2); font-size:12px; font-weight:500;">Join the digital platform of the Yaduvanshi Samaj</span>
+            </div>
+            <div class="error-msg" id="authError"></div>
+            <div class="success-msg" id="authSuccess"></div>
+
+            <form id="signupForm">
+                <div class="field"><label>Full Name</label><input type="text" id="signupName" required placeholder="તમારું પૂરું નામ"></div>
+                <div class="field-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="field"><label>મૂળ ગામ (Village)</label><input type="text" id="signupGam" placeholder="e.g. જૂનાગઢ"></div>
+                    <div class="field"><label>ગોત્ર (Gotra)</label><input type="text" id="signupGotra" placeholder="e.g. ચાવડા"></div>
+                </div>
+                <div class="field"><label>Email</label><input type="email" id="signupEmail" required placeholder="Email Address"></div>
+                <div class="field"><label>Password</label><input type="password" id="signupPassword" required minlength="6" placeholder="Password"></div>
+                <button class="btn btn-primary" type="submit" id="signupBtn" style="margin-top:8px; border-radius:9999px; background:linear-gradient(135deg, var(--krishna-blue) 0%, var(--peacock-teal) 100%);">Join AhirSetu 🪶</button>
+            </form>
+
+            <div class="or-divider">OR</div>
+
+            <div class="switch-auth">Have an account? <a href="login.html" style="font-weight:700; color:var(--peacock-teal);">Log in</a></div>
+        </div>
+    </div>
+
+    <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('authError');
+            const sucEl = document.getElementById('authSuccess');
+            errEl.style.display = 'none';
+            sucEl.style.display = 'none';
+            const btn = document.getElementById('signupBtn');
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
+
+            const name = document.getElementById('signupName').value.trim();
+            const gam = document.getElementById('signupGam').value.trim();
+            const gotra = document.getElementById('signupGotra').value.trim();
+
+            const {
+                error
+            } = await sb.auth.signUp({
+                email: document.getElementById('signupEmail').value.trim(),
+                password: document.getElementById('signupPassword').value,
+                options: {
+                    data: {
+                        name,
+                        gam,
+                        gotra
+                    }
+                }
+            });
+
+            if (error) {
+                errEl.textContent = error.message;
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Join AhirSetu 🪶';
+            } else {
+                sucEl.textContent = 'Account created successfully! You can now log in.';
+                sucEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Join AhirSetu 🪶';
+            }
+        });
+    </script>
+</body>
+
+</html>

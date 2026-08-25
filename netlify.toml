@@ -1,0 +1,60 @@
+# Netlify configuration for AhirConnect
+# All static HTML files are served from the root directory
+
+[build]
+  publish = "."
+
+# Redirect root → login
+[[redirects]]
+  from = "/"
+  to = "/login.html"
+  status = 302
+
+# Pretty-URL redirects (no .html extension → .html file)
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/signup"
+  to = "/signup.html"
+  status = 200
+
+[[redirects]]
+  from = "/home"
+  to = "/home.html"
+  status = 200
+
+[[redirects]]
+  from = "/friends"
+  to = "/friends.html"
+  status = 200
+
+[[redirects]]
+  from = "/requests"
+  to = "/requests.html"
+  status = 200
+
+[[redirects]]
+  from = "/chat"
+  to = "/chat.html"
+  status = 200
+
+[[redirects]]
+  from = "/profile"
+  to = "/profile.html"
+  status = 200
+
+[[redirects]]
+  from = "/more"
+  to = "/more.html"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

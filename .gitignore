@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Supabase keys (keep out of public repos)
+# shared/config.js   ← Uncomment this line if you want to exclude keys from git
+#                      Then create a shared/config.example.js with placeholder values
+
+# Supabase local dev
+.supabase/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+node_modules/
