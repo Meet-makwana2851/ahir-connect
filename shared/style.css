@@ -7,28 +7,28 @@
 }
 
 :root {
-    /* AhirConnect classic heritage palette */
-    --bg: #f4efe6;
-    --surface: #fffdf8;
-    --surface-2: #eee7da;
-    --border: #ded4c4;
-    --border-soft: #ebe3d6;
-    --text: #17344a;
-    --text-2: #6f8190;
-    --text-3: #9aa5a8;
-    --accent: #c98a2d;
-    --accent-bg: #f1e0bd;
-    --accent-2: #17344a;
-    --like-red: #a94d46;
-    --danger: #a94d46;
-    --danger-bg: #f5e2dd;
-    --success: #527b5c;
-    --radius: 14px;
-    --radius-sm: 8px;
-    --radius-lg: 22px;
-    --shadow-sm: 0 2px 8px rgba(9, 20, 35, .08);
-    --shadow-md: 0 12px 28px rgba(9, 20, 35, .14);
-    --shadow-lg: 0 24px 60px rgba(9, 20, 35, .24);
+    /* Instagram-inspired neutral palette */
+    --bg: #FAFAFA;
+    --surface: #FFFFFF;
+    --surface-2: #FAFAFA;
+    --border: #DBDBDB;
+    --border-soft: #EFEFEF;
+    --text: #262626;
+    --text-2: #8E8E8E;
+    --text-3: #C7C7C7;
+    --accent: #0095F6;
+    --accent-bg: #E8F4FD;
+    --accent-2: #00376B;
+    --like-red: #ED4956;
+    --danger: #ED4956;
+    --danger-bg: #FFF0F1;
+    --success: #58C322;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, .08);
+    --shadow-lg: 0 12px 28px rgba(0, 0, 0, .12);
     --sidebar-w: 244px;
     --sidebar-w-narrow: 73px;
     --feed-w: 470px;
@@ -65,9 +65,8 @@ a:hover {
 h1,
 h2,
 h3 {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-ui);
     font-weight: 600;
-    letter-spacing: -0.02em;
 }
 
 ::selection {
