@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up — AhirSetu</title>
+    <title>Sign Up — Ahir Connect</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="shared/style.css">
     <script>
@@ -16,24 +16,23 @@
     <div class="auth-wrap">
         <div class="auth-card" style="max-width:380px; border-radius:18px; border:1px solid var(--border-gold); box-shadow:var(--shadow-md);">
             <div class="brand-row">
-                <span class="brand"><span style="color:var(--krishna-blue);">🪶 Ahir</span><span style="color:var(--peacock-teal);">Setu</span></span>
+                <span class="brand"><span style="color:var(--accent);">Ahir</span><span style="color:var(--text);"> Connect</span></span>
             </div>
-            <div class="tagline" style="color:var(--pitambar-gold); font-weight:700; margin-bottom:18px;">
-                || જય મુરલીધર ||<br>
-                <span style="color:var(--text-2); font-size:12px; font-weight:500;">Join the digital platform of the Yaduvanshi Samaj</span>
+            <div class="tagline" style="color:var(--text-2); font-weight:500; margin-bottom:18px;">
+                <span style="font-size:13px;">Join the digital platform of the Yaduvanshi Samaj</span>
             </div>
             <div class="error-msg" id="authError"></div>
             <div class="success-msg" id="authSuccess"></div>
 
             <form id="signupForm">
-                <div class="field"><label>Full Name</label><input type="text" id="signupName" required placeholder="તમારું પૂરું નામ"></div>
+                <div class="field"><label>Full Name</label><input type="text" id="signupName" required placeholder="Your full name"></div>
                 <div class="field-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div class="field"><label>મૂળ ગામ (Village)</label><input type="text" id="signupGam" placeholder="e.g. જૂનાગઢ"></div>
-                    <div class="field"><label>ગોત્ર (Gotra)</label><input type="text" id="signupGotra" placeholder="e.g. ચાવડા"></div>
+                    <div class="field"><label>Village (Gam)</label><input type="text" id="signupGam" placeholder="e.g. Junagadh"></div>
+                    <div class="field"><label>Gotra</label><input type="text" id="signupGotra" placeholder="e.g. Chavda"></div>
                 </div>
                 <div class="field"><label>Email</label><input type="email" id="signupEmail" required placeholder="Email Address"></div>
                 <div class="field"><label>Password</label><input type="password" id="signupPassword" required minlength="6" placeholder="Password"></div>
-                <button class="btn btn-primary" type="submit" id="signupBtn" style="margin-top:8px; border-radius:9999px; background:linear-gradient(135deg, var(--krishna-blue) 0%, var(--peacock-teal) 100%);">Join AhirSetu 🪶</button>
+                <button class="btn btn-primary" type="submit" id="signupBtn" style="margin-top:8px; border-radius:9999px; background:var(--accent);">Join Ahir Connect</button>
             </form>
 
             <div class="or-divider">OR</div>
@@ -77,12 +76,12 @@
                 errEl.textContent = error.message;
                 errEl.style.display = 'block';
                 btn.disabled = false;
-                btn.textContent = 'Join AhirSetu 🪶';
+                btn.textContent = 'Join Ahir Connect';
             } else {
                 sucEl.textContent = 'Account created successfully! You can now log in.';
                 sucEl.style.display = 'block';
                 btn.disabled = false;
-                btn.textContent = 'Join AhirSetu 🪶';
+                btn.textContent = 'Join Ahir Connect';
             }
         });
     </script>

@@ -94,9 +94,9 @@ function renderSidebar(activePage, user, profile) {
       <!-- Brand -->
       <div class="sidebar-brand">
         <a href="home.html" class="brand-text">
-          <span class="brand-feather">🪶</span> Ahir<span>Setu</span>
+          <span style="color:var(--accent);">Ahir</span><span> Connect</span>
         </a>
-        <div class="brand-subtext">${spiritualGreeting}</div>
+        <div class="brand-subtext">Connecting the Ahir Samaj</div>
       </div>
 
       <!-- Nav -->

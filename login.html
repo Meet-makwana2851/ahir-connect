@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In — AhirSetu</title>
+    <title>Log In — Ahir Connect</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="shared/style.css">
     <script>
@@ -16,18 +16,17 @@
     <div class="auth-wrap">
         <div class="auth-card" style="border-radius:18px; border:1px solid var(--border-gold); box-shadow:var(--shadow-md);">
             <div class="brand-row">
-                <span class="brand"><span style="color:var(--krishna-blue);">🪶 Ahir</span><span style="color:var(--peacock-teal);">Setu</span></span>
+                <span class="brand"><span style="color:var(--accent);">Ahir</span><span style="color:var(--text);"> Connect</span></span>
             </div>
-            <div class="tagline" style="color:var(--pitambar-gold); font-weight:700; margin-bottom:18px;">
-                || જય મુરલીધર ||<br>
-                <span style="color:var(--text-2); font-size:12px; font-weight:500;">Connecting the Ahir Samaj & Yaduvanshis everywhere</span>
+            <div class="tagline" style="color:var(--text-2); font-weight:500; margin-bottom:18px;">
+                <span style="font-size:13px;">Connecting the Ahir Samaj & Yaduvanshis everywhere</span>
             </div>
             <div class="error-msg" id="authError"></div>
 
             <form id="loginForm">
                 <div class="field"><label>Email</label><input type="email" id="loginEmail" required placeholder="Email"></div>
                 <div class="field"><label>Password</label><input type="password" id="loginPassword" required placeholder="Password"></div>
-                <button class="btn btn-primary" type="submit" id="loginBtn" style="margin-top:8px; border-radius:9999px; background:linear-gradient(135deg, var(--krishna-blue) 0%, var(--peacock-teal) 100%);">Log In 🪶</button>
+                <button class="btn btn-primary" type="submit" id="loginBtn" style="margin-top:8px; border-radius:9999px; background:var(--accent);">Log In</button>
             </form>
 
             <div class="or-divider">OR</div>
