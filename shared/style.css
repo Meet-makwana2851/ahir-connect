@@ -7,28 +7,28 @@
 }
 
 :root {
-    /* AhirConnect classic heritage palette */
-    --bg: #f4efe6;
-    --surface: #fffdf8;
-    --surface-2: #eee7da;
-    --border: #ded4c4;
-    --border-soft: #ebe3d6;
-    --text: #17344a;
-    --text-2: #6f8190;
-    --text-3: #9aa5a8;
-    --accent: #c98a2d;
-    --accent-bg: #f1e0bd;
-    --accent-2: #17344a;
-    --like-red: #a94d46;
-    --danger: #a94d46;
-    --danger-bg: #f5e2dd;
-    --success: #527b5c;
-    --radius: 14px;
-    --radius-sm: 8px;
-    --radius-lg: 22px;
-    --shadow-sm: 0 2px 8px rgba(9, 20, 35, .08);
-    --shadow-md: 0 12px 28px rgba(9, 20, 35, .14);
-    --shadow-lg: 0 24px 60px rgba(9, 20, 35, .24);
+    /* AhirConnect monochrome professional palette */
+    --bg: #f7f7f7;
+    --surface: #ffffff;
+    --surface-2: #f2f2f2;
+    --border: #dedede;
+    --border-soft: #ededed;
+    --text: #171717;
+    --text-2: #707070;
+    --text-3: #a6a6a6;
+    --accent: #171717;
+    --accent-bg: #ededed;
+    --accent-2: #000000;
+    --like-red: #262626;
+    --danger: #454545;
+    --danger-bg: #eeeeee;
+    --success: #4b4b4b;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, .05);
+    --shadow-md: 0 6px 18px rgba(0, 0, 0, .08);
+    --shadow-lg: 0 18px 42px rgba(0, 0, 0, .14);
     --sidebar-w: 244px;
     --sidebar-w-narrow: 73px;
     --feed-w: 470px;
@@ -65,9 +65,8 @@ a:hover {
 h1,
 h2,
 h3 {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-ui);
     font-weight: 600;
-    letter-spacing: -0.02em;
 }
 
 ::selection {
@@ -184,7 +183,7 @@ h3 {
 }
 
 .btn-primary:hover {
-    background: #1877F2;
+    background: #3a3a3a;
 }
 
 .btn:disabled {
@@ -243,8 +242,8 @@ h3 {
 }
 
 .success-msg {
-    background: #E8F8E0;
-    color: #2E7D32;
+    background: #e8e8e8;
+    color: #303030;
     padding: 10px 14px;
     border-radius: var(--radius-sm);
     font-size: 13px;
@@ -455,7 +454,7 @@ h3 {
     height: 66px;
     border-radius: 50%;
     padding: 3px;
-    background: linear-gradient(135deg, #FEDA75, #FA7E1E, #D62976, #962FBF, #4F5BD5);
+    background: linear-gradient(135deg, #222, #777, #d4d4d4, #555, #111);
 }
 
 .story-ring.seen {
@@ -2003,7 +2002,13 @@ html.dark {
     --text: #F5F5F5;
     --text-2: #A8A8A8;
     --text-3: #737373;
-    --accent-bg: rgba(0, 149, 246, .15);
+    --accent: #f5f5f5;
+    --accent-2: #ffffff;
+    --like-red: #f5f5f5;
+    --danger: #d0d0d0;
+    --danger-bg: #1e1e1e;
+    --success: #c0c0c0;
+    --accent-bg: rgba(255, 255, 255, .12);
     --shadow-sm: none;
     --shadow-md: none;
     --shadow-lg: none;
