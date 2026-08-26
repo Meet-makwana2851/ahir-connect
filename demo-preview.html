@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AhirSetu — Yaduvanshi Samaj Community Portal (Interactive UI Demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Rozha+One&family=Noto+Sans+Gujarati:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --krishna-blue-dark: #07172c;
+      --krishna-blue: #0b2545;
+      --krishna-blue-light: #133966;
+      --peacock-teal: #008075;
+      --peacock-emerald: #02665e;
+      --peacock-cyan: #0fb8a6;
+      --pitambar-gold: #d4af37;
+      --pitambar-gold-light: #f7e7b4;
+      --pitambar-gold-dark: #b89122;
+      --bg-cream: #fbf9f4;
+      --card-bg: #ffffff;
+      --surface-subtle: #f5f1e8;
+      --border-color: #e8e0d0;
+      --border-gold: rgba(212, 175, 55, 0.4);
+      --text-main: #14213d;
+      --text-muted: #5c677d;
+      --text-light: #8d99ae;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --shadow-subtle: 0 4px 20px rgba(11, 37, 69, 0.05);
+      --shadow-hover: 0 12px 32px rgba(11, 37, 69, 0.12);
+      --shadow-gold: 0 4px 18px rgba(212, 175, 55, 0.25);
+    }
+
+    .dark {
+      --bg-cream: #060e18;
+      --card-bg: #0d1a2b;
+      --surface-subtle: #122238;
+      --border-color: #1c3350;
+      --border-gold: rgba(212, 175, 55, 0.35);
+      --text-main: #f0f4f8;
+      --text-muted: #a0aec0;
+      --text-light: #718096;
+      --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Gujarati', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-cream);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* --- TOP BANNER / ANNOUNCEMENT STRIP --- */
+    .top-spiritual-bar {
+      background: linear-gradient(90deg, #07172c 0%, #0b2545 40%, #008075 80%, #07172c 100%);
+      color: #fff;
+      padding: 7px 24px;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .spiritual-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .spiritual-badge .feather-glow {
+      filter: drop-shadow(0 0 6px #0fb8a6);
+      animation: pulse 2.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    .top-bar-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .lang-switcher {
+      display: flex;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-full);
+      padding: 2px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lang-btn.active {
+      background: var(--pitambar-gold);
+      color: #0b2545;
+    }
+
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffd166;
+      border-radius: var(--radius-full);
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* --- MAIN HEADER --- */
+    header.main-header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      position: sticky;
+      top: 35px;
+      z-index: 90;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .brand-logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-graphic {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--krishna-blue) 0%, var(--peacock-teal) 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-gold);
+      border: 2px solid var(--pitambar-gold);
+    }
+
+    .brand-title-group h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--krishna-blue);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1.1;
+    }
+
+    .dark .brand-title-group h1 {
+      color: #fff;
+    }
+
+    .brand-title-group h1 span {
+      color: var(--peacock-teal);
+    }
+
+    .brand-title-group h1 .gold-accent {
+      color: var(--pitambar-gold);
+    }
+
+    .brand-tagline {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--pitambar-gold-dark);
+      letter-spacing: 0.4px;
+    }
+
+    .dark .brand-tagline {
+      color: var(--pitambar-gold);
+    }
+
+    .header-search {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+
+    .header-search input {
+      width: 100%;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 10px 20px 10px 44px;
+      font-size: 13.5px;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .header-search input:focus {
+      border-color: var(--pitambar-gold);
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+      background: var(--card-bg);
+    }
+
+    .header-search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      pointer-events: none;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .action-badge-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .action-badge-btn:hover {
+      background: var(--peacock-teal);
+      color: white;
+      border-color: var(--peacock-teal);
+    }
+
+    .action-badge-count {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #e63946;
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      border-radius: 10px;
+      padding: 1px 6px;
+      border: 2px solid var(--card-bg);
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-gold);
+      padding: 5px 14px 5px 6px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+    }
+
+    .user-pill-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--pitambar-gold);
+    }
+
+    .user-pill-info {
+      text-align: left;
+    }
+
+    .user-pill-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .user-pill-village {
+      font-size: 10px;
+      color: var(--peacock-teal);
+      font-weight: 600;
+    }
+
+    /* --- LAYOUT GRID --- */
+    .app-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 32px;
+      display: grid;
+      grid-template-columns: 270px 1fr 340px;
+      gap: 28px;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* --- LEFT SIDEBAR (COMMUNITY NAVIGATION) --- */
+    .left-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+    }
+
+    .nav-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 16px 12px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--text-light);
+      padding: 6px 14px 10px;
+      text-transform: uppercase;
+    }
+
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-menu-item:hover {
+      background: var(--surface-subtle);
+      color: var(--krishna-blue);
+      transform: translateX(4px);
+    }
+
+    .dark .nav-menu-item:hover {
+      color: #fff;
+    }
+
+    .nav-menu-item.active {
+      background: linear-gradient(135deg, rgba(11, 37, 69, 0.08) 0%, rgba(0, 128, 117, 0.12) 100%);
+      color: var(--krishna-blue);
+      font-weight: 700;
+      border-color: var(--border-gold);
+    }
+
+    .dark .nav-menu-item.active {
+      background: rgba(0, 128, 117, 0.25);
+      color: #fff;
+      border-color: var(--pitambar-gold);
+    }
+
+    .nav-icon {
+      font-size: 18px;
+      width: 26px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .nav-badge-hot {
+      margin-left: auto;
+      background: linear-gradient(135deg, #f72585, #7209b7);
+      color: white;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+    }
+
+    .yaduvansh-banner-card {
+      background: linear-gradient(135deg, #07172c 0%, #0b2545 100%);
+      border: 1px solid var(--pitambar-gold);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-gold);
+    }
+
+    .yaduvansh-banner-card::before {
+      content: '🪶';
+      position: absolute;
+      right: -10px;
+      bottom: -15px;
+      font-size: 80px;
+      opacity: 0.15;
+      transform: rotate(20deg);
+    }
+
+    .yaduvansh-banner-card h4 {
+      font-family: 'Rozha One', serif;
+      font-size: 17px;
+      color: var(--pitambar-gold);
+      margin-bottom: 6px;
+    }
+
+    .yaduvansh-banner-card p {
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 12px;
+    }
+
+    .yaduvansh-btn {
+      background: linear-gradient(135deg, var(--pitambar-gold) 0%, var(--pitambar-gold-dark) 100%);
+      color: #07172c;
+      border: none;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.2s;
+    }
+
+    .yaduvansh-btn:hover {
+      transform: scale(1.04);
+    }
+
+    /* --- CENTER FEED & CONTENT PANELS --- */
+    .center-content {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      min-width: 0;
+    }
+
+    /* Bhagavad Gita Card */
+    .shloka-card {
+      background: linear-gradient(135deg, #07172c 0%, #0d274c 50%, #024b45 100%);
+      border: 1.5px solid var(--pitambar-gold);
+      border-radius: var(--radius-lg);
+      padding: 22px 28px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(7, 23, 44, 0.2);
+    }
+
+    .shloka-decor-left, .shloka-decor-right {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(to bottom, var(--pitambar-gold), transparent, var(--pitambar-gold));
+    }
+    .shloka-decor-left { left: 8px; }
+    .shloka-decor-right { right: 8px; }
+
+    .shloka-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .shloka-title {
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--pitambar-gold);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shloka-sanskrit {
+      font-family: 'Rozha One', 'Noto Sans Gujarati', serif;
+      font-size: 20px;
+      line-height: 1.6;
+      color: #fffbf0;
+      text-align: center;
+      margin: 12px 0 10px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .shloka-meaning {
+      font-size: 13px;
+      color: #e2e8f0;
+      text-align: center;
+      line-height: 1.5;
+      font-style: italic;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Pinned Circular / Samaj Announcement */
+    .circular-banner {
+      background: linear-gradient(90deg, #fff9eb 0%, #ffffff 100%);
+      border: 1.5px solid #f0c968;
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-subtle);
+      position: relative;
+    }
+
+    .dark .circular-banner {
+      background: linear-gradient(90deg, #1b2612 0%, #0d1a2b 100%);
+      border-color: #d4af37;
+    }
+
+    .circular-badge-pin {
+      background: #e63946;
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(230, 57, 70, 0.3);
+    }
+
+    .circular-content {
+      flex: 1;
+    }
+
+    .circular-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--krishna-blue);
+      margin-bottom: 2px;
+    }
+
+    .dark .circular-title {
+      color: #ffd166;
+    }
+
+    .circular-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .circular-action-btn {
+      background: var(--peacock-teal);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .circular-action-btn:hover {
+      background: var(--peacock-emerald);
+    }
+
+    /* Create Post Card */
+    .create-post-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .create-post-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .create-post-input {
+      flex: 1;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 12px 20px;
+      font-size: 13.5px;
+      color: var(--text-main);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .create-post-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .post-opt-btn {
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .post-opt-btn:hover {
+      background: var(--surface-subtle);
+      color: var(--krishna-blue);
+    }
+
+    .share-post-submit-btn {
+      background: linear-gradient(135deg, var(--krishna-blue) 0%, var(--peacock-teal) 100%);
+      color: white;
+      border: none;
+      padding: 8px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      box-shadow: var(--shadow-gold);
+    }
+
+    /* Community Post Card */
+    .post-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-subtle);
+      transition: border-color 0.2s;
+    }
+
+    .post-card:hover {
+      border-color: var(--border-gold);
+    }
+
+    .post-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .post-author-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .post-author-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--peacock-teal);
+    }
+
+    .post-author-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .author-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .author-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .verified-samaj-badge {
+      background: rgba(0, 128, 117, 0.12);
+      color: var(--peacock-teal);
+      border: 1px solid rgba(0, 128, 117, 0.3);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .author-meta-tags {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .author-meta-tags .tag-gam {
+      color: var(--peacock-emerald);
+      font-weight: 600;
+      background: var(--surface-subtle);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .author-meta-tags .tag-gotra {
+      color: var(--pitambar-gold-dark);
+      font-weight: 600;
+    }
+
+    .dark .author-meta-tags .tag-gotra {
+      color: var(--pitambar-gold);
+    }
+
+    .post-body-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-main);
+      margin-bottom: 16px;
+    }
+
+    .post-media-container {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid var(--border-color);
+      max-height: 380px;
+      background: #000;
+    }
+
+    .post-media-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .post-interactions-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .reaction-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Peacock Feather Like Button */
+    .mor-pankh-like-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-gold);
+      padding: 7px 16px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--krishna-blue);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dark .mor-pankh-like-btn {
+      color: #ffd166;
+    }
+
+    .mor-pankh-like-btn:hover {
+      background: linear-gradient(135deg, rgba(0, 128, 117, 0.15) 0%, rgba(212, 175, 55, 0.2) 100%);
+      transform: scale(1.05);
+    }
+
+    .mor-pankh-like-btn.liked {
+      background: linear-gradient(135deg, #0b2545 0%, #008075 100%);
+      color: #ffffff !important;
+      border-color: var(--pitambar-gold);
+      box-shadow: 0 4px 14px rgba(0, 128, 117, 0.4);
+    }
+
+    .feather-anim-icon {
+      font-size: 17px;
+      display: inline-block;
+      transition: transform 0.3s;
+    }
+
+    .mor-pankh-like-btn:hover .feather-anim-icon {
+      transform: rotate(-15deg) scale(1.2);
+    }
+
+    .post-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .post-action-btn:hover {
+      background: var(--surface-subtle);
+      color: var(--krishna-blue);
+    }
+
+    /* --- RIGHT SIDEBAR (ACHIEVERS & EVENTS) --- */
+    .right-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+    }
+
+    .widget-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .widget-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .widget-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--krishna-blue);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dark .widget-title {
+      color: #fff;
+    }
+
+    .widget-link {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--peacock-teal);
+      text-decoration: none;
+    }
+
+    /* Achievers list */
+    .achiever-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .achiever-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .achiever-photo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1.5px solid var(--pitambar-gold);
+    }
+
+    .achiever-details {
+      flex: 1;
+    }
+
+    .achiever-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .achiever-feat {
+      font-size: 11.5px;
+      color: var(--peacock-emerald);
+      font-weight: 600;
+    }
+
+    .achiever-loc {
+      font-size: 10.5px;
+      color: var(--text-light);
+    }
+
+    /* Events list */
+    .event-item {
+      display: flex;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .event-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .event-date-box {
+      width: 48px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--krishna-blue) 0%, var(--peacock-teal) 100%);
+      border-radius: 12px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid var(--pitambar-gold);
+    }
+
+    .event-month {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--pitambar-gold-light);
+    }
+
+    .event-day {
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .event-details {
+      flex: 1;
+    }
+
+    .event-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 3px;
+    }
+
+    .event-venue {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Stats Grid */
+    .stats-widget-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--krishna-blue);
+      margin-bottom: 2px;
+    }
+
+    .dark .stat-number {
+      color: var(--pitambar-gold);
+    }
+
+    .stat-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* --- DIRECTORY TAB (GAM & GOTRA) --- */
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-pane.active {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .filter-bar-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .filter-select {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .member-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .member-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      transition: all 0.25s;
+    }
+
+    .member-card:hover {
+      border-color: var(--pitambar-gold);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .member-card-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--peacock-teal);
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-gold);
+    }
+
+    .member-card-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .member-card-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--peacock-emerald);
+      background: rgba(0, 128, 117, 0.1);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      margin-bottom: 12px;
+    }
+
+    .member-card-details {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      background: var(--surface-subtle);
+      padding: 10px;
+      border-radius: var(--radius-md);
+    }
+
+    .member-detail-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .member-detail-row strong {
+      color: var(--text-main);
+    }
+
+    .member-connect-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--krishna-blue) 0%, var(--peacock-teal) 100%);
+      color: white;
+      border: none;
+      padding: 9px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .member-connect-btn:hover {
+      box-shadow: var(--shadow-gold);
+      transform: scale(1.02);
+    }
+
+    /* --- VYAPAR SETU CARDS --- */
+    .business-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-subtle);
+      display: flex;
+      gap: 16px;
+      transition: all 0.2s;
+    }
+
+    .business-card:hover {
+      border-color: var(--pitambar-gold);
+    }
+
+    .biz-icon-box {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #fff3d1 0%, #fae19c 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+      border: 1.5px solid var(--pitambar-gold);
+    }
+
+    .biz-info {
+      flex: 1;
+    }
+
+    .biz-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--krishna-blue);
+      margin-bottom: 2px;
+    }
+
+    .dark .biz-name {
+      color: #ffd166;
+    }
+
+    .biz-owner {
+      font-size: 12px;
+      color: var(--peacock-teal);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .biz-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .biz-contact-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .biz-btn-whatsapp {
+      background: #25d366;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .biz-btn-call {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .app-container {
+        grid-template-columns: 240px 1fr;
+      }
+      .right-sidebar {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app-container {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+      .left-sidebar {
+        display: none;
+      }
+      header.main-header {
+        padding: 12px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🪶 TOP SPIRITUAL BAR -->
+  <div class="top-spiritual-bar">
+    <div class="spiritual-badge">
+      <span class="feather-glow">🪶</span>
+      <span id="txt-banner-motto">|| ૐ શ્રી કૃષ્ણાય નમઃ || જય મુરલીધર — યદુવંશી ગૌરવ અને સમાજ સેતુ</span>
+    </div>
+    <div class="top-bar-controls">
+      <div class="lang-switcher">
+        <button class="lang-btn active" onclick="switchLang('gu')">ગુજરાતી</button>
+        <button class="lang-btn" onclick="switchLang('en')">English</button>
+        <button class="lang-btn" onclick="switchLang('hi')">हिन्दी</button>
+      </div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span> <span id="theme-text">Dark</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 🏛️ MAIN HEADER -->
+  <header class="main-header">
+    <a href="#" class="brand-logo-area" onclick="showTab('tab-home')">
+      <div class="logo-graphic">
+        <svg width="30" height="30" viewBox="0 0 100 100" fill="none">
+          <!-- Peacock Feather Motif -->
+          <ellipse cx="50" cy="40" rx="22" ry="32" fill="#008075" stroke="#d4af37" stroke-width="3"/>
+          <ellipse cx="50" cy="42" rx="14" ry="20" fill="#0b2545"/>
+          <circle cx="50" cy="44" r="7" fill="#0fb8a6"/>
+          <!-- Flute / Bansuri line -->
+          <rect x="15" y="70" width="70" height="8" rx="4" fill="#d4af37" stroke="#b89122" stroke-width="1.5"/>
+          <circle cx="35" cy="74" r="2" fill="#07172c"/>
+          <circle cx="48" cy="74" r="2" fill="#07172c"/>
+          <circle cx="61" cy="74" r="2" fill="#07172c"/>
+        </svg>
+      </div>
+      <div class="brand-title-group">
+        <h1>Ahir<span class="gold-accent">Setu</span></h1>
+        <div class="brand-tagline" id="txt-tagline">અહીર સમાજ ડિજિટલ મંચ • યદુવંશ ગૌરવ</div>
+      </div>
+    </a>
+
+    <div class="header-search">
+      <span class="header-search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="ગામ, ગોત્ર, વ્યવસાય અથવા સભ્યનું નામ શોધો... (e.g. જૂનાગઢ, ભાટિયા, એડવોકેટ)">
+    </div>
+
+    <div class="header-actions">
+      <div class="action-badge-btn" title="સંદેશાઓ (Messages)">
+        💬
+        <span class="action-badge-count">2</span>
+      </div>
+      <div class="action-badge-btn" title="સૂચનાઓ (Notifications)">
+        🔔
+        <span class="action-badge-count">5</span>
+      </div>
+      <div class="user-pill" title="તમારી પ્રોફાઇલ">
+        <img class="user-pill-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar">
+        <div class="user-pill-info">
+          <div class="user-pill-name">હિતેશ આહીર</div>
+          <div class="user-pill-village">જૂનાગઢ • ચાવડા</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 🌐 APP LAYOUT -->
+  <div class="app-container">
+
+    <!-- 🧭 LEFT SIDEBAR NAVIGATION -->
+    <aside class="left-sidebar">
+      <div class="nav-card">
+        <div class="nav-section-title" id="txt-nav-title">સમાજ સેતુ નેવિગેશન</div>
+        <ul class="nav-menu">
+          <li>
+            <a class="nav-menu-item active" id="nav-home" onclick="showTab('tab-home')">
+              <span class="nav-icon">🪶</span>
+              <span id="txt-nav-feed">સમાજ ફીડ (Home)</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-menu-item" id="nav-dir" onclick="showTab('tab-directory')">
+              <span class="nav-icon">👥</span>
+              <span id="txt-nav-dir">ગામ & ગોત્ર ડિરેક્ટરી</span>
+              <span class="nav-badge-hot">નવું</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-menu-item" id="nav-biz" onclick="showTab('tab-business')">
+              <span class="nav-icon">💼</span>
+              <span id="txt-nav-biz">વેપાર સેતુ (Business)</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-menu-item" id="nav-matrimony" onclick="showTab('tab-matrimony')">
+              <span class="nav-icon">💍</span>
+              <span id="txt-nav-matrimony">સંબંધ સેતુ (Matrimony)</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-menu-item" id="nav-youth" onclick="showTab('tab-youth')">
+              <span class="nav-icon">🎓</span>
+              <span id="txt-nav-youth">શિક્ષા & કારકિર્દી</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-menu-item" id="nav-heritage" onclick="showTab('tab-heritage')">
+              <span class="nav-icon">📜</span>
+              <span id="txt-nav-heritage">યદુવંશ ઇતિહાસ & ગૌરવ</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-menu-item" id="nav-dayro" onclick="showTab('tab-dayro')">
+              <span class="nav-icon">🎶</span>
+              <span id="txt-nav-dayro">લોક ડાયરો & સાહિત્ય</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- YADUVANSH PRIDE CARD -->
+      <div class="yaduvansh-banner-card">
+        <h4>યદુવંશી સંકલ્પ</h4>
+        <p>"સમાજ સેવા, યુવા શિક્ષણ અને પરંપરાનું જતન — ભગવાન શ્રીકૃષ્ણના આદર્શો પર ચાલતો આપણો સમાજ."</p>
+        <button class="yaduvansh-btn" onclick="showTab('tab-heritage')">
+          <span>ગૌરવ ગાથા વાંચો</span> 🪶
+        </button>
+      </div>
+    </aside>
+
+    <!-- 📄 CENTER CONTENT AREA -->
+    <main class="center-content">
+
+      <!-- ================= TAB 1: HOME FEED ================= -->
+      <div class="tab-pane active" id="tab-home">
+        
+        <!-- 🌟 DAILY GEETA SHLOKA CARD -->
+        <div class="shloka-card">
+          <div class="shloka-decor-left"></div>
+          <div class="shloka-decor-right"></div>
+          <div class="shloka-header">
+            <span class="shloka-title">🪶 શ્રીકૃષ્ણ અમૃતવાણી • આજનો ગીતા શ્લોક</span>
+            <span style="font-size: 11px; color: var(--pitambar-gold); font-weight:700;">અધ્યાય ૨, શ્લોક ૪૭</span>
+          </div>
+          <div class="shloka-sanskrit">
+            कर्मण्येवाधिकारस्ते मा फलेषु कदाचन ।<br>
+            मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि ॥
+          </div>
+          <div class="shloka-meaning">
+            "કર્મ કરવાનો જ તમારો અધિકાર છે, ફળ પર ક્યારેય નહીં. કર્મફળની ઇચ્છા રાખીને કાર્ય ન કરો અને કર્મ ન કરવામાં પણ આસક્તિ ન રાખો."
+          </div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.85); text-align:center; margin-top:8px; font-style:italic; background:rgba(0,0,0,0.18); padding:6px 12px; border-radius:6px;">
+            "You have a right to perform your prescribed duty, but never to the fruits of your actions. Never consider yourself the cause of results, nor be attached to inaction."
+          </div>
+        </div>
+
+        <!-- 📢 PINNED CIRCULAR BANNER -->
+        <div class="circular-banner">
+          <div class="circular-badge-pin">
+            <span>📌</span> પરિપત્ર
+          </div>
+          <div class="circular-content">
+            <div class="circular-title">શ્રી દ્વારકાધીશ જન્માષ્ટમી મહોત્સવ & રક્તદાન મહાશિબિર ૨૦૨૬</div>
+            <div class="circular-desc">તારીખ: ૨૮ ઑગસ્ટ • સ્થળ: શ્રી આહીર સમાજ વાડી, જૂનાગઢ • તમામ પરિવારોને ભાવભર્યું આમંત્રણ.</div>
+          </div>
+          <button class="circular-action-btn" onclick="alert('પરિપત્ર ડાઉનલોડ થશે!')">વિગત જુઓ</button>
+        </div>
+
+        <!-- ✍️ CREATE POST -->
+        <div class="create-post-card">
+          <div class="create-post-top">
+            <img class="user-pill-avatar" style="width:42px;height:42px;" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar">
+            <input class="create-post-input" type="text" placeholder="સમાજ સાથે વિચારો, ગામના સમાચાર અથવા સિદ્ધિ શેર કરો...">
+          </div>
+          <div class="create-post-options">
+            <div style="display:flex; gap:8px;">
+              <button class="post-opt-btn">📷 ફોટો / વિડીયો</button>
+              <button class="post-opt-btn">🏆 સિદ્ધિ (Achievement)</button>
+              <button class="post-opt-btn">📍 ગામનું અપડેટ</button>
+            </div>
+            <button class="share-post-submit-btn">પોસ્ટ કરો 🪶</button>
+          </div>
+        </div>
+
+        <!-- 🪶 POST 1 (ACHIEVEMENT) -->
+        <article class="post-card">
+          <div class="post-header">
+            <div class="post-author-group">
+              <img class="post-author-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80" alt="Avatar">
+              <div class="post-author-details">
+                <div class="author-name-row">
+                  <span class="author-name">રાજેશભાઈ ચાવડા (આહીર)</span>
+                  <span class="verified-samaj-badge">✓ સમાજ રત્ન</span>
+                </div>
+                <div class="author-meta-tags">
+                  <span class="tag-gam">📍 ગામ: માધાપર (કચ્છ)</span>
+                  <span class="tag-gotra">ગોત્ર: ચાવડા</span>
+                  <span>• ૨ કલાક પહેલાં</span>
+                </div>
+              </div>
+            </div>
+            <span style="color:var(--text-light); cursor:pointer;">•••</span>
+          </div>
+
+          <div class="post-body-text">
+            જય મુરલીધર! 🙏<br>
+            આપણા સમાજની દીકરી <strong>પૂજા આહીર</strong> એ GPSC Class-1 પરીક્ષામાં સમગ્ર ગુજરાતમાં ઉત્કૃષ્ટ પરિણામ મેળવી DYSP તરીકે પસંદગી પામી છે. સમગ્ર યદુવંશ સમાજનું ગૌરવ વધારવા બદલ ખૂબ ખૂબ અભિનંદન અને ઉજ્જવળ ભવિષ્યની શુભકામનાઓ! 🪶✨
+          </div>
+
+          <div class="post-media-container">
+            <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80" alt="Achievement celebration">
+          </div>
+
+          <div class="post-interactions-bar">
+            <div class="reaction-group">
+              <button class="mor-pankh-like-btn" onclick="toggleMorPankh(this)">
+                <span class="feather-anim-icon">🪶</span>
+                <span class="like-label">જય મુરલીધર</span>
+                <span class="like-count">(૧૨૪)</span>
+              </button>
+              <button class="post-action-btn">💬 અભિનંદન (૨૮)</button>
+              <button class="post-action-btn">↗️ શેર કરો</button>
+            </div>
+            <button class="post-action-btn">🔖 સાચવો</button>
+          </div>
+        </article>
+
+        <!-- 🪶 POST 2 (CULTURE & FOLK) -->
+        <article class="post-card">
+          <div class="post-header">
+            <div class="post-author-group">
+              <img class="post-author-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80" alt="Avatar">
+              <div class="post-author-details">
+                <div class="author-name-row">
+                  <span class="author-name">દેવરાજ આહીર (સાહિત્ય પ્રેમી)</span>
+                  <span class="verified-samaj-badge">✓ કલાકાર</span>
+                </div>
+                <div class="author-meta-tags">
+                  <span class="tag-gam">📍 ગામ: વિસાવદર (જૂનાગઢ)</span>
+                  <span class="tag-gotra">ગોત્ર: ભાટિયા</span>
+                  <span>• ૫ કલાક પહેલાં</span>
+                </div>
+              </div>
+            </div>
+            <span style="color:var(--text-light); cursor:pointer;">•••</span>
+          </div>
+
+          <div class="post-body-text">
+            "જેના રુદિયામાં રાધા વસે, જેના હોઠે મુરલીનો સૂર...<br>
+            એવો યદુવંશનો આહીર જગતમાં સદાય અડીખમ!"<br><br>
+            આગામી પૂનમે ગિરનારની ગોદમાં પરંપરાગત આહીર રાસ અને સંતવાણી ડાયરાનું આયોજન રાખેલ છે. આપ સૌ પધારો એવી નમ્ર વિનંતી.
+          </div>
+
+          <div class="post-interactions-bar">
+            <div class="reaction-group">
+              <button class="mor-pankh-like-btn" onclick="toggleMorPankh(this)">
+                <span class="feather-anim-icon">🪶</span>
+                <span class="like-label">જય મુરલીધર</span>
+                <span class="like-count">(૮૯)</span>
+              </button>
+              <button class="post-action-btn">💬 ટિપ્પણી (૧૫)</button>
+              <button class="post-action-btn">↗️ શેર કરો</button>
+            </div>
+            <button class="post-action-btn">🔖 સાચવો</button>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- ================= TAB 2: DIRECTORY (GAM & GOTRA) ================= -->
+      <div class="tab-pane" id="tab-directory">
+        <div class="filter-bar-card">
+          <div style="font-weight:700; font-size:14px; width:100%; margin-bottom:4px;">
+            👥 ગામ અને ગોત્ર આધારિત સમાજ ડિરેક્ટરી ફિલ્ટર
+          </div>
+          <select class="filter-select">
+            <option>બધા જિલ્લા (All Districts)</option>
+            <option>જૂનાગઢ (Junagadh)</option>
+            <option>કચ્છ (Kutch)</option>
+            <option>જામનગર (Jamnagar)</option>
+            <option>રાજકોટ (Rajkot)</option>
+            <option>અમરેલી (Amreli)</option>
+          </select>
+          <select class="filter-select">
+            <option>બધા ગોત્ર (All Gotras)</option>
+            <option>ચાવડા (Chavda)</option>
+            <option>ભાટિયા (Bhatiya)</option>
+            <option>વાળા (Vala)</option>
+            <option>કામળિયા (Kamaliya)</option>
+            <option>સોરઠિયા (Sorathiya)</option>
+          </select>
+          <select class="filter-select">
+            <option>વ્યવસાય (Profession)</option>
+            <option>સરકારી સેવા / GPSC / UPSC</option>
+            <option>ડોક્ટર / મેડિકલ</option>
+            <option>એડવોકેટ / વકીલ</option>
+            <option>ઉદ્યોગપતિ / વેપાર</option>
+            <option>કૃષિ / પશુપાલન</option>
+          </select>
+        </div>
+
+        <div class="member-grid">
+          <!-- Member 1 -->
+          <div class="member-card">
+            <img class="member-card-avatar" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=140&auto=format&fit=crop&q=80" alt="Member">
+            <div class="member-card-name">ડૉ. હર્ષદ આહીર</div>
+            <div class="member-card-badge">Cardiologist (M.D.)</div>
+            <div class="member-card-details">
+              <div class="member-detail-row"><span>ગામ:</span> <strong>માંડવી (કચ્છ)</strong></div>
+              <div class="member-detail-row"><span>ગોત્ર:</span> <strong>ચાવડા</strong></div>
+              <div class="member-detail-row"><span>હાલ રહેઠાણ:</span> <strong>અમદાવાદ</strong></div>
+            </div>
+            <button class="member-connect-btn" onclick="alert('કનેક્ટ રિક્વેસ્ટ મોકલાઈ ગઈ!')">સંપર્ક કરો / કનેક્ટ 🪶</button>
+          </div>
+
+          <!-- Member 2 -->
+          <div class="member-card">
+            <img class="member-card-avatar" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=140&auto=format&fit=crop&q=80" alt="Member">
+            <div class="member-card-name">કિરણબેન વાળા</div>
+            <div class="member-card-badge">Advocate (High Court)</div>
+            <div class="member-card-details">
+              <div class="member-detail-row"><span>ગામ:</span> <strong>કેશોદ (જૂનાગઢ)</strong></div>
+              <div class="member-detail-row"><span>ગોત્ર:</span> <strong>વાળા</strong></div>
+              <div class="member-detail-row"><span>હાલ રહેઠાણ:</span> <strong>રાજકોટ</strong></div>
+            </div>
+            <button class="member-connect-btn" onclick="alert('કનેક્ટ રિક્વેસ્ટ મોકલાઈ ગઈ!')">સંપર્ક કરો / કનેક્ટ 🪶</button>
+          </div>
+
+          <!-- Member 3 -->
+          <div class="member-card">
+            <img class="member-card-avatar" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=140&auto=format&fit=crop&q=80" alt="Member">
+            <div class="member-card-name">ભરતભાઈ ભાટિયા</div>
+            <div class="member-card-badge">Founder - Gir Amrut Dairy</div>
+            <div class="member-card-details">
+              <div class="member-detail-row"><span>ગામ:</span> <strong>તળાજા (ભાવનગર)</strong></div>
+              <div class="member-detail-row"><span>ગોત્ર:</span> <strong>ભાટિયા</strong></div>
+              <div class="member-detail-row"><span>હાલ રહેઠાણ:</span> <strong>સુરત</strong></div>
+            </div>
+            <button class="member-connect-btn" onclick="alert('કનેક્ટ રિક્વેસ્ટ મોકલાઈ ગઈ!')">સંપર્ક કરો / કનેક્ટ 🪶</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: BUSINESS (VYAPAR SETU) ================= -->
+      <div class="tab-pane" id="tab-business">
+        <div class="circular-banner" style="border-color:var(--pitambar-gold);">
+          <div class="circular-badge-pin" style="background:var(--peacock-teal);">
+            💼 વેપાર સેતુ
+          </div>
+          <div class="circular-content">
+            <div class="circular-title">"યદુવંશી વેપાર — સમાજની પ્રગતિનો આધાર"</div>
+            <div class="circular-desc">આપણા આહીર ભાઈઓ-બહેનોના વ્યવસાયને પ્રાથમિકતા આપો અને આત્મનિર્ભર બનો.</div>
+          </div>
+          <button class="circular-action-btn" onclick="alert('નવો બિઝનેસ રજીસ્ટર કરો!')">+ બિઝનેસ ઉમેરો</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <!-- Biz 1 -->
+          <div class="business-card">
+            <div class="biz-icon-box">🥛</div>
+            <div class="biz-info">
+              <div class="biz-name">શ્રી મુરલીધર ગીર ગૌશાળા & ઓર્ગેનિક ડેરી</div>
+              <div class="biz-owner">માલિક: રમેશભાઈ આહીર • જૂનાગઢ</div>
+              <div class="biz-desc">૧૦૦% શુદ્ધ ગીર ગાયનું A2 ઘી, દૂધ, માખણ અને ઓર્ગેનિક ખેત પેદાશો હોમ ડિલિવરી સાથે ઉપલબ્ધ.</div>
+              <div class="biz-contact-row">
+                <button class="biz-btn-whatsapp" onclick="alert('WhatsApp ચેટ શરૂ થશે!')">💬 WhatsApp સંપર્ક</button>
+                <button class="biz-btn-call" onclick="alert('કૉલ: +91 98765 43210')">📞 કૉલ કરો</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Biz 2 -->
+          <div class="business-card">
+            <div class="biz-icon-box">🚛</div>
+            <div class="biz-info">
+              <div class="biz-name">દ્વારકાધીશ રોડલાઇન્સ & ટ્રાન્સપોર્ટ</div>
+              <div class="biz-owner">માલિક: વિજયભાઈ ચાવડા • કંડલા / ગાંધીધામ</div>
+              <div class="biz-desc">ઓલ ઇન્ડિયા હેવી ટ્રાન્સપોર્ટ, કન્ટેનર મુવમેન્ટ અને વેરહાઉસિંગ સેવાઓ.</div>
+              <div class="biz-contact-row">
+                <button class="biz-btn-whatsapp">💬 WhatsApp સંપર્ક</button>
+                <button class="biz-btn-call">📞 કૉલ કરો</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 4: HERITAGE & HISTORY ================= -->
+      <div class="tab-pane" id="tab-heritage">
+        <div class="shloka-card">
+          <div class="shloka-header">
+            <span class="shloka-title">📜 યદુવંશ ગૌરવ ગાથા • ભગવાન શ્રીકૃષ્ણના વંશજ</span>
+          </div>
+          <div style="font-size:15px; line-height:1.7; color:#f8fafc;">
+            આહીર (યાદવ) સમાજનો ઇતિહાસ વૈદિક કાળથી ભગવાન શ્રીકૃષ્ણના ચંદ્રવંશ સાથે જોડાયેલો છે. મહાભારત કાળથી લઈને દ્વારકા નગરી સુધી અને દેશની રક્ષા માટે લડાયેલ ઐતિહાસિક લડાઈઓમાં આહીરોની શૂરવીરતા અને વફાદારી અજોડ રહી છે.
+          </div>
+          <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div style="background:rgba(255,255,255,0.08); padding:12px; border-radius:8px; border:1px solid rgba(212,175,55,0.3);">
+              <h5 style="color:var(--pitambar-gold); font-size:14px; margin-bottom:4px;">🪶 ૧. રેઝાંગ લા નું યુદ્ધ (૧૯૬૨)</h5>
+              <p style="font-size:12px; color:#e2e8f0;">૧૩ કુમાઉ રેજિમેન્ટના ૧૧૪ વીર આહીર જવાનોએ અંતિમ શ્વાસ સુધી લડીને લદ્દાખનું રક્ષણ કર્યું હતું.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.08); padding:12px; border-radius:8px; border:1px solid rgba(212,175,55,0.3);">
+              <h5 style="color:var(--pitambar-gold); font-size:14px; margin-bottom:4px;">🪶 ૨. દ્વારકા & સૌરાષ્ટ્ર સંસ્કૃતિ</h5>
+              <p style="font-size:12px; color:#e2e8f0;">ગોપ સંસ્કૃતિ, પરંપરાગત આહીરાણી ભરતકામ, રાસ અને લોક સાહિત્યની અમૂલ્ય ધરોહર.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 🏆 RIGHT SIDEBAR (ACHIEVERS & EVENTS) -->
+    <aside class="right-sidebar">
+      
+      <!-- COMMUNITY STATS -->
+      <div class="widget-card">
+        <div class="widget-header">
+          <div class="widget-title">📊 સમાજ એકતા આંકડા</div>
+        </div>
+        <div class="stats-widget-grid">
+          <div class="stat-box">
+            <div class="stat-number">૫૨,૪૦૦+</div>
+            <div class="stat-label">જોડાયેલા સભ્યો</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">૨૮૦+</div>
+            <div class="stat-label">નોંધાયેલા ગામો</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">૧,૪૫૦+</div>
+            <div class="stat-label">વેપાર લિસ્ટિંગ</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">૧૨૦+</div>
+            <div class="stat-label">સમાજ ટ્રસ્ટ્સ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACHIEVERS SPOTLIGHT -->
+      <div class="widget-card">
+        <div class="widget-header">
+          <div class="widget-title">⭐ સમાજ રત્ન Spotlight</div>
+          <a href="#" class="widget-link" onclick="showTab('tab-youth')">બધા જુઓ</a>
+        </div>
+        <div class="achiever-item">
+          <img class="achiever-photo" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Achiever">
+          <div class="achiever-details">
+            <div class="achiever-name">પૂજા આહીર</div>
+            <div class="achiever-feat">DYSP (GPSC Rank 4)</div>
+            <div class="achiever-loc">📍 માધાપર, કચ્છ</div>
+          </div>
+        </div>
+        <div class="achiever-item">
+          <img class="achiever-photo" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" alt="Achiever">
+          <div class="achiever-details">
+            <div class="achiever-name">સાગર આહીર</div>
+            <div class="achiever-feat">National Gold Medalist (Wrestling)</div>
+            <div class="achiever-loc">📍 જામનગર</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPCOMING EVENTS -->
+      <div class="widget-card">
+        <div class="widget-header">
+          <div class="widget-title">📅 આગામી સમાજ ઉત્સવ</div>
+        </div>
+        <div class="event-item">
+          <div class="event-date-box">
+            <span class="event-month">AUG</span>
+            <span class="event-day">28</span>
+          </div>
+          <div class="event-details">
+            <div class="event-name">શ્રીકૃષ્ણ જન્માષ્ટમી મહામહોત્સવ</div>
+            <div class="event-venue">📍 શ્રી દ્વારકાધીશ મંદિર પરિસર</div>
+          </div>
+        </div>
+        <div class="event-item">
+          <div class="event-date-box">
+            <span class="event-month">SEP</span>
+            <span class="event-day">14</span>
+          </div>
+          <div class="event-details">
+            <div class="event-name">અખિલ ગુજરાત આહીર યુવા સંમેલન</div>
+            <div class="event-venue">📍 સરદાર પટેલ સભાગૃહ, અમદાવાદ</div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <script>
+    // Tab switching logic
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-menu-item').forEach(el => el.classList.remove('active'));
+      
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) targetPane.classList.add('active');
+
+      const navMap = {
+        'tab-home': 'nav-home',
+        'tab-directory': 'nav-dir',
+        'tab-business': 'nav-biz',
+        'tab-matrimony': 'nav-matrimony',
+        'tab-youth': 'nav-youth',
+        'tab-heritage': 'nav-heritage',
+        'tab-dayro': 'nav-dayro'
+      };
+
+      const navBtn = document.getElementById(navMap[tabId]);
+      if (navBtn) navBtn.classList.add('active');
+    }
+
+    // Mor Pankh Like Reaction
+    function toggleMorPankh(btn) {
+      const isLiked = btn.classList.toggle('liked');
+      const countEl = btn.querySelector('.like-count');
+      let current = parseInt(countEl.textContent.replace(/[^0-9]/g, '')) || 100;
+      
+      if (isLiked) {
+        countEl.textContent = `(${current + 1})`;
+        btn.querySelector('.feather-anim-icon').style.transform = 'scale(1.4) rotate(-20deg)';
+        setTimeout(() => {
+          btn.querySelector('.feather-anim-icon').style.transform = 'scale(1) rotate(0deg)';
+        }, 300);
+      } else {
+        countEl.textContent = `(${Math.max(0, current - 1)})`;
+      }
+    }
+
+    // Theme Toggle
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('theme-text').textContent = isDark ? 'Light' : 'Dark';
+    }
+
+    // Multi-Language Toggle
+    function switchLang(lang) {
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      if (lang === 'en') {
+        document.getElementById('txt-banner-motto').textContent = '|| Om Shree Krishnaya Namah || Jai Muralidhar — Yaduvanshi Pride & Community Portal';
+        document.getElementById('txt-tagline').textContent = 'Ahir Community Platform • Lineage of Lord Krishna';
+        document.getElementById('search-input').placeholder = 'Search by Village, Gotra, Profession or Member Name...';
+        document.getElementById('txt-nav-title').textContent = 'COMMUNITY NAVIGATION';
+        document.getElementById('txt-nav-feed').textContent = 'Samaj Feed (Home)';
+        document.getElementById('txt-nav-dir').textContent = 'Gam & Gotra Directory';
+        document.getElementById('txt-nav-biz').textContent = 'Vyapar Setu (Business)';
+        document.getElementById('txt-nav-matrimony').textContent = 'Rishtey Setu (Matrimony)';
+        document.getElementById('txt-nav-youth').textContent = 'Youth & Education';
+        document.getElementById('txt-nav-heritage').textContent = 'Yaduvansh Heritage & Pride';
+        document.getElementById('txt-nav-dayro').textContent = 'Folk Literature & Dayro';
+      } else if (lang === 'gu') {
+        document.getElementById('txt-banner-motto').textContent = '|| ૐ શ્રી કૃષ્ણાય નમઃ || જય મુરલીધર — યદુવંશી ગૌરવ અને સમાજ સેતુ';
+        document.getElementById('txt-tagline').textContent = 'અહીર સમાજ ડિજિટલ મંચ • યદુવંશ ગૌરવ';
+        document.getElementById('search-input').placeholder = 'ગામ, ગોત્ર, વ્યવસાય અથવા સભ્યનું નામ શોધો... (e.g. જૂનાગઢ, ભાટિયા, એડવોકેટ)';
+        document.getElementById('txt-nav-title').textContent = 'સમાજ સેતુ નેવિગેશન';
+        document.getElementById('txt-nav-feed').textContent = 'સમાજ ફીડ (Home)';
+        document.getElementById('txt-nav-dir').textContent = 'ગામ & ગોત્ર ડિરેક્ટરી';
+        document.getElementById('txt-nav-biz').textContent = 'વેપાર સેતુ (Business)';
+        document.getElementById('txt-nav-matrimony').textContent = 'સંબંધ સેતુ (Matrimony)';
+        document.getElementById('txt-nav-youth').textContent = 'શિક્ષા & કારકિર્દી';
+        document.getElementById('txt-nav-heritage').textContent = 'યદુવંશ ઇતિહાસ & ગૌરવ';
+        document.getElementById('txt-nav-dayro').textContent = 'લોક ડાયરો & સાહિત્ય';
+      } else if (lang === 'hi') {
+        document.getElementById('txt-banner-motto').textContent = '|| ॐ श्री कृष्णाय नमः || जय मुरलीधर — यदुवंशी गौरव एवं समाज सेतु';
+        document.getElementById('txt-tagline').textContent = 'अहीर समाज डिजिटल मंच • यदुवंश गौरव';
+        document.getElementById('search-input').placeholder = 'गांव, गोत्र, व्यवसाय या सदस्य का नाम खोजें...';
+        document.getElementById('txt-nav-title').textContent = 'समाज सेतु नेविगेशन';
+        document.getElementById('txt-nav-feed').textContent = 'समाज फ़ीड (Home)';
+        document.getElementById('txt-nav-dir').textContent = 'गांव एवं गोत्र डायरेक्टरी';
+        document.getElementById('txt-nav-biz').textContent = 'व्यापार सेतु (Business)';
+        document.getElementById('txt-nav-matrimony').textContent = 'संबंध सेतु (Matrimony)';
+        document.getElementById('txt-nav-youth').textContent = 'शिक्षा एवं करियर';
+        document.getElementById('txt-nav-heritage').textContent = 'यदुवंश इतिहास एवं गौरव';
+        document.getElementById('txt-nav-dayro').textContent = 'लोक साहित्य एवं डायरो';
+      }
+    }
+  </script>
+</body>
+</html>

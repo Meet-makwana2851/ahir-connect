@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dayro & Lok Sahitya — Ahir Connect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <div class="main-panel main-panel-wide">
+
+            <!-- Section Header -->
+            <div class="dayro-section-header">
+                <h1 data-i18n="dayroTitle">🎶 લોક સાહિત્ય, ડાયરો & સંતવાણી</h1>
+                <p data-i18n="dayroSubtitle">આહીર સંસ્કૃતિ, કૃષ્ણ ભક્તિ, સંતવાણી અને શૌર્ય કથાઓનો અમૂલ્ય વારસો</p>
+            </div>
+
+            <!-- Heritage Highlights Card -->
+            <div class="shloka-card" style="margin-bottom:28px;">
+                <div class="shloka-header">
+                    <span class="shloka-title" data-i18n="heritageTitle">📜 યદુવંશ ગૌરવ • ભગવાન શ્રીકૃષ્ણના વંશજ</span>
+                    <span class="shloka-chapter" data-i18n="heritageChapter">ઇતિહાસ & સંસ્કૃતિ</span>
+                </div>
+                <div class="heritage-history">
+                    <h2 data-i18n="historyTitle">📜 ઇતિહાસ</h2>
+                    <div class="heritage-history-row">
+                        <span class="heritage-history-icon">🌙</span>
+                        <div><strong data-i18n="originsLabel">ઉદ્ભવ</strong>
+                            <p data-i18n="originsText">આહીર (યાદવ) સમાજ ભગવાન શ્રીકૃષ્ણના ચંદ્રવંશના ઉત્તરાધિકારી છે.</p>
+                        </div>
+                    </div>
+                    <div class="heritage-history-row">
+                        <span class="heritage-history-icon">🧭</span>
+                        <div><strong data-i18n="migrationLabel">ગુજરાતમાં સ્થળાંતર</strong>
+                            <p data-i18n="migrationText">સૌરાષ્ટ્ર, કચ્છ અને સમગ્ર દેશમાં આહીર સમાજે પોતાની ગોપ સંસ્કૃતિ અને પરંપરાઓ વિકસાવી.</p>
+                        </div>
+                    </div>
+                    <div class="heritage-history-row">
+                        <span class="heritage-history-icon">🤝</span>
+                        <div><strong data-i18n="communitiesLabel">પેટા-સમુદાયો</strong>
+                            <p data-i18n="communitiesText">પંચોળી, સોરઠિયા અને અન્ય પેટા-સમુદાયોએ આ વારસાને પોતાની આગવી ઓળખ સાથે જાળવી રાખ્યો.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="heritage-dayro">
+                    <h2 data-i18n="dayroSectionTitle">🎶 ડાયરો & લોકવાણી</h2>
+                    <blockquote><span data-i18n="dayroQuote">“જેના રુદિયામાં રાધા વસે, જેના હોઠે મુરલીનો સૂર... એવો યદુવંશનો આહીર જગતમાં સદાય અડીખમ!”</span><cite data-i18n="dayroAttribution">વડીલોની વાણી મુજબ</cite></blockquote>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-top:14px;">
+                    <div style="background:rgba(0,0,0,0.25); padding:10px 14px; border-radius:8px; border:1px solid rgba(212,175,55,0.3);">
+                        <strong style="color:var(--pitambar-gold); font-size:13px;" data-i18n="rezangTitle">🪶 ૧. રેઝાંગ લા નું યુદ્ધ (૧૯૬૨)</strong>
+                        <p style="font-size:12px; color:#E2E8F0; margin-top:3px;" data-i18n="rezangText">૧૧૪ વીર આહીર જવાનોનું અપ્રતિમ શૌર્ય.</p>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.25); padding:10px 14px; border-radius:8px; border:1px solid rgba(212,175,55,0.3);">
+                        <strong style="color:var(--pitambar-gold); font-size:13px;" data-i18n="raasTitle">🪶 ૨. પરંપરાગત આહીર રાસ</strong>
+                        <p style="font-size:12px; color:#E2E8F0; margin-top:3px;" data-i18n="raasText">દાંડિયા રાસ, મણિયારો અને મોરચંગની ધૂન.</p>
+                    </div>
+                </div>
+                <div class="heritage-source" data-i18n="sourceText">સમુદાયના વડીલો અને સભ્યો પાસેથી સંકલિત</div>
+            </div>
+
+            <!-- Video Grid Header -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <h2 style="font-size:20px; color:var(--text);" data-i18n="videoTitle">📺 પ્રખ્યાત ડાયરો & સંતવાણી વિડીયો</h2>
+            </div>
+
+            <!-- Video Grid -->
+            <div class="dayro-grid">
+                <!-- Video 1 -->
+                <div class="dayro-card">
+                    <div class="dayro-video-frame">
+                        <iframe src="https://www.youtube-nocookie.com/embed/n4dZq6r4j5E" title="Mayabhai Ahir Dayro" allowfullscreen loading="lazy"></iframe>
+                    </div>
+                    <div class="dayro-body">
+                        <span class="dayro-tag" data-i18n="video1Tag">હાસ્ય & લોક સાહિત્ય</span>
+                        <div class="dayro-title" data-i18n="video1Title">માયાભાઈ આહીર — આહીર સમાજ ગૌરવ અને હાસ્ય રસ</div>
+                        <div class="dayro-artist" data-i18n="video1Artist">કલાકાર: માયાભાઈ આહીર</div>
+                    </div>
+                </div>
+
+                <!-- Video 2 -->
+                <div class="dayro-card">
+                    <div class="dayro-video-frame">
+                        <iframe src="https://www.youtube-nocookie.com/embed/P_PqF3d1qgA" title="Shree Krishna Bhajan" allowfullscreen loading="lazy"></iframe>
+                    </div>
+                    <div class="dayro-body">
+                        <span class="dayro-tag" data-i18n="video2Tag">કૃષ્ણ ભક્તિ & સંતવાણી</span>
+                        <div class="dayro-title" data-i18n="video2Title">શ્રી દ્વારકાધીશ સંતવાણી & મુરલીધર ભજન</div>
+                        <div class="dayro-artist" data-i18n="video2Artist">કલાકાર: ભીખુદાન ગઢવી & કીર્તિદાન ગઢવી</div>
+                    </div>
+                </div>
+
+                <!-- Video 3 -->
+                <div class="dayro-card">
+                    <div class="dayro-video-frame">
+                        <iframe src="https://www.youtube-nocookie.com/embed/e_Zg0sZ5M7s" title="Ahir Raas" allowfullscreen loading="lazy"></iframe>
+                    </div>
+                    <div class="dayro-body">
+                        <span class="dayro-tag" data-i18n="video3Tag">સંસ્કૃતિ & રાસ</span>
+                        <div class="dayro-title" data-i18n="video3Title">પરંપરાગત આહીર દાંડિયા રાસ — સૌરાષ્ટ્ર ધરોહર</div>
+                        <div class="dayro-artist" data-i18n="video3Artist">આહીર યુવા મંડળ</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
+    <script src="shared/utils.js"></script>
+    <script>
+        let currentUser, currentProfile;
+
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            currentUser = ctx.user;
+            currentProfile = ctx.profile;
+            renderSidebar('dayro', currentUser, currentProfile);
+            applyDayroLanguage();
+        })();
+
+        const dayroTranslations = {
+            en: {
+                dayroTitle: '🎶 Folk Literature, Dayro & Devotional Poetry',
+                dayroSubtitle: 'The living heritage of Ahir culture, Krishna devotion, devotional poetry and stories of courage',
+                heritageTitle: '📜 Yaduvanshi Heritage • Descendants of Lord Krishna',
+                heritageChapter: 'History & Culture',
+                historyTitle: '📜 History',
+                originsLabel: 'Origins',
+                originsText: 'The Ahir (Yadav) community traces its heritage to the Chandravanshi lineage of Lord Krishna.',
+                migrationLabel: 'Migration into Gujarat',
+                migrationText: 'Across Saurashtra, Kutch and Gujarat, Ahir communities developed a living pastoral culture and enduring traditions.',
+                communitiesLabel: 'Sub-communities',
+                communitiesText: 'Pancholi, Sorathiya and other sub-communities have preserved this heritage through their distinct identities.',
+                dayroSectionTitle: '🎶 Dayro & Folk Voices',
+                dayroQuote: '“Where Radha lives in the heart and Krishna’s flute sings on the lips, the Yaduvanshi Ahir always stands strong in the world.”',
+                dayroAttribution: 'as elders tell it',
+                rezangTitle: '🪶 1. Battle of Rezang La (1962)',
+                rezangText: 'The unmatched courage of 114 Ahir soldiers.',
+                raasTitle: '🪶 2. Traditional Ahir Raas',
+                raasText: 'The rhythm of Dandiya Raas, Maniyaro and Morchang.',
+                sourceText: 'Compiled from community elders and members',
+                videoTitle: '📺 Featured Dayro & Devotional Poetry Videos',
+                video1Tag: 'Humour & Folk Literature',
+                video1Title: 'Mayabhai Ahir — Ahir pride and humour',
+                video1Artist: 'Artist: Mayabhai Ahir',
+                video2Tag: 'Krishna Devotion & Devotional Poetry',
+                video2Title: 'Dwarkadhish devotional poetry & Muralidhar bhajans',
+                video2Artist: 'Artists: Bhikhudan Gadhvi & Kirtidan Gadhvi',
+                video3Tag: 'Culture & Raas',
+                video3Title: 'Traditional Ahir Dandiya Raas — Heritage of Saurashtra',
+                video3Artist: 'Ahir Youth Association'
+            },
+            gu: {}
+        };
+        dayroTranslations.gu = Object.fromEntries([...document.querySelectorAll('[data-i18n]')].map(element => [element.dataset.i18n, element.textContent]));
+
+        function applyDayroLanguage() {
+            const lang = getCurrentLang();
+            const strings = dayroTranslations[lang] || dayroTranslations.en;
+            document.documentElement.lang = lang === 'gu' ? 'gu' : 'en';
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                if (strings[element.dataset.i18n]) element.textContent = strings[element.dataset.i18n];
+            });
+        }
+    </script>
+</body>
+
+</html>

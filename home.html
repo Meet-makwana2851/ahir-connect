@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ahir Connect — Feed</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <div class="main-panel">
+            <!-- Daily Bhagavad Gita Card -->
+            <div class="shloka-card" id="dailyShlokaCard">
+                <div class="shloka-header">
+                    <span class="shloka-title">🪶 Daily Krishna Wisdom • Bhagavad Gita</span>
+                    <span class="shloka-chapter" id="shlokaChapter">Chapter 2, Verse 47</span>
+                </div>
+                <div class="shloka-sanskrit" id="shlokaSanskrit">
+                    कर्मण्येवाधिकारस्ते मा फलेषु कदाचन ।<br> मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि ॥
+                </div>
+                <div class="shloka-meaning" id="shlokaMeaningGu">
+                    "કર્મ કરવાનો જ તમારો અધિકાર છે, ફળ પર ક્યારેય નહીં. કર્મફળની ઇચ્છા રાખીને કાર્ય ન કરો અને કર્મ ન કરવામાં પણ આસક્તિ ન રાખો."
+                </div>
+                <div class="shloka-meaning-en" id="shlokaMeaningEn" style="font-size:12px; color:rgba(255,255,255,0.85); text-align:center; margin-top:8px; font-style:italic; background:rgba(0,0,0,0.18); padding:6px 12px; border-radius:6px;">
+                    "You have a right to perform your prescribed duty, but never to the fruits of action."
+                </div>
+            </div>
+
+            <!-- Pinned Circular Banner -->
+            <div class="circular-banner">
+                <div class="circular-badge-pin" id="announcementPin">📌 Announcement</div>
+                <div class="circular-content">
+                    <div class="circular-title" id="announcementTitle">Shree Dwarkadhish Janmashtami Festival & Blood Donation Camp 2026</div>
+                    <div class="circular-desc" id="announcementDesc">Date: 28th August • Venue: Ahir Samaj Hall • All community families are welcome.</div>
+                </div>
+                <a href="dayro.html" class="circular-btn" id="announcementBtn">View Details</a>
+            </div>
+
+            <!-- Stories row -->
+            <div class="stories-row" id="storiesRow"></div>
+            <!-- Hidden file input for story upload -->
+            <input type="file" id="storyFileInput" accept="image/*,video/*" style="display:none;">
+
+            <!-- Feed -->
+            <div id="feedList"></div>
+        </div>
+    </div>
+
+    <!-- Story Viewer Modal -->
+    <div class="story-viewer" id="storyViewer" style="display:none;">
+        <div class="story-viewer-header">
+            <div class="story-viewer-user">
+                <img class="avatar" id="storyViewerAvatar" src="">
+                <span id="storyViewerName"></span>
+                <span class="story-viewer-time" id="storyViewerTime"></span>
+            </div>
+            <button class="story-viewer-close" id="closeStoryViewer">✕</button>
+        </div>
+        <div class="story-viewer-media" id="storyViewerMedia"></div>
+        <div class="story-viewer-progress" id="storyProgress"></div>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div class="modal-backdrop" id="createModal" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span id="createPostTitle">Create new post</span>
+                <button class="modal-close" id="closeCreateModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="postCaption" placeholder="Write a caption..."></textarea>
+                <div id="mediaPreviewWrap"></div>
+            </div>
+            <div class="modal-footer">
+                <label class="file-label">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span id="photoVideoLabel">Photo / Video</span>
+        <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;">
+      </label>
+                <button class="btn btn-primary" style="width:auto;padding:8px 24px;border-radius:8px;font-size:14px;" id="postBtn">Share</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
+    <script src="shared/utils.js"></script>
+    <script src="shared/geeta.js"></script>
+    <script>
+        let currentUser, currentProfile, mediaFile = null,
+            feedChannel = null;
+
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            currentUser = ctx.user;
+            currentProfile = ctx.profile;
+            renderSidebar('home', currentUser, currentProfile);
+            applyHomeLanguage();
+            if (new URLSearchParams(window.location.search).get('create') === '1') openCreateModal();
+            renderAnnouncementBanner();
+            renderDailyShloka();
+            loadStories();
+            loadFeed();
+        })();
+
+        function renderAnnouncementBanner() {
+            const pinEl = document.getElementById('announcementPin');
+            const titleEl = document.getElementById('announcementTitle');
+            const descEl = document.getElementById('announcementDesc');
+            const btnEl = document.getElementById('announcementBtn');
+
+            if (pinEl) pinEl.textContent = t('announcementPin');
+            if (titleEl) titleEl.textContent = t('announcementTitle');
+            if (descEl) descEl.textContent = t('announcementDesc');
+            if (btnEl) btnEl.textContent = t('announcementBtn');
+        }
+
+        function applyHomeLanguage() {
+            document.documentElement.lang = getCurrentLang();
+            document.getElementById('createPostTitle').textContent = t('createPost');
+            document.getElementById('postCaption').placeholder = t('writeCaption');
+            document.getElementById('photoVideoLabel').textContent = t('photoVideo');
+            document.getElementById('postBtn').textContent = t('share');
+        }
+
+        function renderDailyShloka() {
+            if (typeof getTodayShloka !== 'function') return;
+            const s = getTodayShloka();
+            if (!s) return;
+            document.getElementById('shlokaChapter').textContent = `${s.chapterEn} • ${s.chapterGu}`;
+            document.getElementById('shlokaSanskrit').innerHTML = s.sanskrit.replace(/\n/g, '<br>');
+            document.getElementById('shlokaMeaningEn').textContent = `"${s.meaningEn}"`;
+            document.getElementById('shlokaMeaningGu').textContent = `"${s.meaningGu}"`;
+        }
+
+        /* ---- Create Post Modal ---- */
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+            document.getElementById('postCaption').focus();
+        }
+        document.getElementById('closeCreateModal').addEventListener('click', () => {
+            document.getElementById('createModal').style.display = 'none';
+            document.getElementById('postCaption').value = '';
+            document.getElementById('mediaPreviewWrap').innerHTML = '';
+            document.getElementById('mediaInput').value = '';
+            mediaFile = null;
+        });
+        document.getElementById('createModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('createModal')) {
+                document.getElementById('closeCreateModal').click();
+            }
+        });
+
+        document.getElementById('mediaInput').addEventListener('change', (e) => {
+            mediaFile = e.target.files[0];
+            const wrap = document.getElementById('mediaPreviewWrap');
+            wrap.innerHTML = '';
+            if (mediaFile) {
+                const url = URL.createObjectURL(mediaFile);
+                wrap.innerHTML = mediaFile.type.startsWith('video') ?
+                    `<video src="${url}" class="preview-media" controls></video>` :
+                    `<img src="${url}" class="preview-media">`;
+            }
+        });
+
+        document.getElementById('postBtn').onclick = async() => {
+            const caption = document.getElementById('postCaption').value.trim();
+            if (!caption && !mediaFile) {
+                alert('Write something or attach a photo first.');
+                return;
+            }
+            const btn = document.getElementById('postBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sharing...';
+            try {
+                let mediaUrl = '',
+                    mediaType = '';
+                if (mediaFile) {
+                    mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
+                    const path = `${currentUser.id}/${Date.now()}_${mediaFile.name}`;
+                    const {
+                        error: upErr
+                    } = await sb.storage.from('posts').upload(path, mediaFile);
+                    if (upErr) throw upErr;
+                    const {
+                        data: urlData
+                    } = sb.storage.from('posts').getPublicUrl(path);
+                    mediaUrl = urlData.publicUrl;
+                }
+                const {
+                    error
+                } = await sb.from('posts').insert({
+                    author_id: currentUser.id,
+                    caption,
+                    media_url: mediaUrl,
+                    media_type: mediaType
+                });
+                if (error) throw error;
+                document.getElementById('closeCreateModal').click();
+                loadFeed();
+            } catch (err) {
+                alert('Error posting: ' + err.message);
+            }
+            btn.disabled = false;
+            btn.textContent = 'Share';
+        };
+
+        /* ---- Stories (only users with active stories in last 24h) ---- */
+        async function loadStories() {
+            const row = document.getElementById('storiesRow');
+            const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+            // Get all active stories (last 24h)
+            const {
+                data: stories
+            } = await sb.from('stories')
+                .select('id, author_id, media_url, media_type, created_at, profiles:author_id(name, avatar_url)')
+                .gt('created_at', cutoff)
+                .order('created_at', {
+                    ascending: false
+                });
+
+            // Get which stories the current user has viewed
+            const storyIds = (stories || []).map(s => s.id);
+            let viewedSet = new Set();
+            if (storyIds.length > 0) {
+                const {
+                    data: views
+                } = await sb.from('story_views')
+                    .select('story_id')
+                    .eq('viewer_id', currentUser.id)
+                    .in('story_id', storyIds);
+                viewedSet = new Set((views || []).map(v => v.story_id));
+            }
+
+            // Group stories by author
+            const authorMap = new Map();
+            (stories || []).forEach(s => {
+                if (!authorMap.has(s.author_id)) {
+                    authorMap.set(s.author_id, {
+                        author_id: s.author_id,
+                        profile: s.profiles || {},
+                        stories: [],
+                        allSeen: true
+                    });
+                }
+                const group = authorMap.get(s.author_id);
+                group.stories.push(s);
+                if (!viewedSet.has(s.id)) group.allSeen = false;
+            });
+
+            // Check if current user has an active story
+            const myStoryGroup = authorMap.get(currentUser.id);
+            const hasMyStory = !!myStoryGroup;
+
+            // "Your story" — always shown first
+            let html = `<div class="story-item" onclick="${hasMyStory ? `viewStoryGroup('${currentUser.id}')` : `document.getElementById('storyFileInput').click()`}">
+    <div class="story-ring ${hasMyStory ? (myStoryGroup.allSeen ? 'seen' : '') : 'no-story'}">
+      <img src="${currentProfile.avatar_url || defaultAvatar(currentProfile.name)}">
+    </div>
+    ${!hasMyStory ? '<div class="story-add-badge">+</div>' : ''}
+    <span class="story-name">Your story</span>
+  </div>`;
+
+  // Other users' stories (unseen first)
+  const others = [...authorMap.entries()]
+    .filter(([id]) => id !== currentUser.id)
+    .sort((a, b) => a[1].allSeen - b[1].allSeen); // unseen first
+
+  others.forEach(([authorId, group]) => {
+    const p = group.profile;
+    html += `<div class="story-item" onclick="viewStoryGroup('${authorId}')">
+      <div class="story-ring ${group.allSeen ? 'seen' : ''}">
+        <a href="profile.html?id=${authorId}" onclick="event.stopPropagation()">
+          <img src="${p.avatar_url || defaultAvatar(p.name)}">
+        </a>
+      </div>
+      <span class="story-name">${escapeHtml(p.name || 'User')}</span>
+    </div>`;
+  });
+
+  // If no stories at all, just show "Your story" with add button
+  row.innerHTML = html;
+  window._storyAuthorMap = authorMap;
+  window._storyViewedSet = viewedSet;
+}
+
+/* ---- Upload Story ---- */
+document.getElementById('storyFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const mediaType = file.type.startsWith('video') ? 'video' : 'image';
+  const path = `${currentUser.id}/${Date.now()}_${file.name}`;
+  try {
+    const { error: upErr } = await sb.storage.from('stories').upload(path, file);
+    if(upErr) throw upErr;
+    const { data: urlData } = sb.storage.from('stories').getPublicUrl(path);
+    const { error } = await sb.from('stories').insert({
+      author_id: currentUser.id, media_url: urlData.publicUrl, media_type: mediaType
+    });
+    if(error) throw error;
+    loadStories(); // Refresh stories row
+  } catch(err) { alert('Error uploading story: ' + err.message); }
+  e.target.value = '';
+});
+
+/* ---- View Story ---- */
+let storyTimer = null;
+function viewStoryGroup(authorId){
+  const group = window._storyAuthorMap?.get(authorId);
+  if(!group || group.stories.length === 0) return;
+
+  const viewer = document.getElementById('storyViewer');
+  const p = group.profile;
+  document.getElementById('storyViewerAvatar').src = p.avatar_url || defaultAvatar(p.name);
+  document.getElementById('storyViewerName').textContent = p.name || 'User';
+
+  let idx = 0;
+  // Find first unseen story
+  for(let i = 0; i < group.stories.length; i++){
+    if(!window._storyViewedSet.has(group.stories[i].id)){ idx = i; break; }
+  }
+
+  function showStory(i){
+    if(i >= group.stories.length){ viewer.style.display = 'none'; clearTimeout(storyTimer); return; }
+    const s = group.stories[i];
+    document.getElementById('storyViewerTime').textContent = timeAgo(s.created_at);
+    const mediaEl = document.getElementById('storyViewerMedia');
+    if(s.media_type === 'video'){
+      mediaEl.innerHTML = `<video src="${s.media_url}" autoplay playsinline style="max-width:100%;max-height:80vh;border-radius:8px;"></video>`;
+    } else {
+      mediaEl.innerHTML = `<img src="${s.media_url}" style="max-width:100%;max-height:80vh;border-radius:8px;">`;
+    }
+
+    // Progress bar
+    const progEl = document.getElementById('storyProgress');
+    progEl.innerHTML = group.stories.map((_, pi) =>
+      `<div class="story-prog-seg ${pi < i ? 'done' : pi === i ? 'active' : ''}"><div class="story-prog-fill"></div></div>`
+    ).join('');
+
+    // Mark as viewed
+    if(!window._storyViewedSet.has(s.id)){
+      sb.from('story_views').insert({ story_id: s.id, viewer_id: currentUser.id }).then(() => {
+        window._storyViewedSet.add(s.id);
+      });
+    }
+
+    // Auto-advance after 5 seconds
+    clearTimeout(storyTimer);
+    storyTimer = setTimeout(() => { idx++; showStory(idx); }, 5000);
+  }
+
+  viewer.style.display = 'flex';
+  showStory(idx);
+
+  // Click right side = next, left side = prev
+  document.getElementById('storyViewerMedia').onclick = (e) => {
+    clearTimeout(storyTimer);
+    const rect = e.currentTarget.getBoundingClientRect();
+    if(e.clientX > rect.left + rect.width / 2){ idx++; } else { idx = Math.max(0, idx - 1); }
+    showStory(idx);
+  };
+}
+
+document.getElementById('closeStoryViewer').addEventListener('click', () => {
+  document.getElementById('storyViewer').style.display = 'none';
+  clearTimeout(storyTimer);
+  loadStories(); // Refresh to update ring colors
+});
+
+/* ---- Feed ---- */
+async function loadFeed(){
+  const listEl = document.getElementById('feedList');
+  const { data: posts, error } = await sb
+    .from('posts')
+    .select('*, profiles:author_id ( id, name, avatar_url, gam, gotra, district, profession )')
+    .order('created_at', { ascending: false });
+
+  if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load feed.</div>`; return; }
+
+  // Get likes and comments for all posts
+  const postIds = posts.map(p => p.id);
+  const [likesRes, commentsRes, myLikesRes] = await Promise.all([
+    sb.from('likes').select('post_id', { count: 'exact' }).in('post_id', postIds),
+    sb.from('comments').select('*, profiles:user_id(name)').in('post_id', postIds).order('created_at', { ascending: true }),
+    sb.from('likes').select('post_id').eq('user_id', currentUser.id).in('post_id', postIds),
+  ]);
+
+  // Count likes per post
+  const likeCountMap = {};
+  (likesRes.data || []).forEach(l => { likeCountMap[l.post_id] = (likeCountMap[l.post_id] || 0) + 1; });
+  // My likes set
+  const myLikes = new Set((myLikesRes.data || []).map(l => l.post_id));
+  // Comments grouped
+  const commentMap = {};
+  (commentsRes.data || []).forEach(c => {
+    if(!commentMap[c.post_id]) commentMap[c.post_id] = [];
+    commentMap[c.post_id].push(c);
+  });
+
+  renderFeed(posts, likeCountMap, myLikes, commentMap);
+  const targetPost = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null;
+  if(targetPost) targetPost.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  if(feedChannel) sb.removeChannel(feedChannel);
+  feedChannel = sb.channel('public:posts')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
+    .subscribe();
+}
+
+function renderFeed(posts, likeCountMap, myLikes, commentMap){
+  const listEl = document.getElementById('feedList');
+  if(!posts || posts.length === 0){
+    listEl.innerHTML = `<div class="empty-state"><div class="big">🪶</div>No posts yet in the Samaj feed. Share an update or village news!</div>`;
+    return;
+  }
+  listEl.innerHTML = '';
+  posts.forEach(p => {
+    const author = p.profiles || {};
+    const likeCount = likeCountMap[p.id] || 0;
+    const liked = myLikes.has(p.id);
+    const comments = commentMap[p.id] || [];
+    const recentComments = comments.slice(-2);
+
+    let mediaHtml = '';
+    if(p.media_url){
+      mediaHtml = p.media_type === 'video'
+        ? `<div class="post-media-wrap"><video src="${p.media_url}" class="post-media" controls></video></div>`
+        : `<div class="post-media-wrap" ondblclick="doubleTapLike(event, '${p.id}')"><img src="${p.media_url}" class="post-media"></div>`;
+    }
+
+    let commentsHtml = '';
+    if(comments.length > 2){
+      commentsHtml += `<button class="view-comments" onclick="this.style.display='none';this.nextElementSibling.style.display='block';">View all ${comments.length} comments</button>`;
+      commentsHtml += `<div style="display:none;">`;
+      comments.forEach(c => {
+        commentsHtml += `<div class="comment-item"><a class="cap-user">${escapeHtml(c.profiles?.name || 'User')}</a>${escapeHtml(c.text)}</div>`;
+      });
+      commentsHtml += `</div>`;
+    }
+    recentComments.forEach(c => {
+      commentsHtml += `<div class="comment-item"><a class="cap-user">${escapeHtml(c.profiles?.name || 'User')}</a>${escapeHtml(c.text)}</div>`;
+    });
+
+    const card = document.createElement('div');
+    card.className = 'post-card';
+    card.id = `post-${p.id}`;
+    card.innerHTML = `
+      <!-- Header -->
+      <div class="post-header">
+        <a href="profile.html?id=${author.id}"><img class="avatar" src="${author.avatar_url || defaultAvatar(author.name)}"></a>
+        <div class="post-header-info">
+          <div class="post-author-name-row">
+            <a class="username" href="profile.html?id=${author.id}">${escapeHtml(author.name || 'Member')}</a>
+          </div>
+          ${author.gam ? `<div class="tag-gam">📍 ${t('gamLabel')}: ${escapeHtml(author.gam)}${author.district ? ` (${escapeHtml(author.district)})` : ''}</div>` : ''}
+        </div>
+        <div class="post-menu-wrap">
+          <button class="post-more-btn" onclick="togglePostMenu(event, '${p.id}')" aria-label="Post options">⋯</button>
+          <div class="post-menu" id="post-menu-${p.id}" hidden>
+            ${author.id === currentUser.id
+              ? `<button type="button" onclick="deletePost('${p.id}')">${t('deletePost')}</button>`
+              : `<button type="button" onclick="reportPost('${p.id}')">${t('reportPost')}</button>`}
+          </div>
+        </div>
+      </div>
+
+      <!-- Media -->
+      ${mediaHtml}
+
+      <!-- Actions -->
+      <div class="post-actions">
+        <div class="post-actions-left" style="gap:10px;">
+          <button class="mor-pankh-like-btn ${liked ? 'liked' : ''}" data-post-id="${p.id}" onclick="toggleLike(this, '${p.id}')">
+            <span class="feather-anim-icon">🪶</span>
+            <span class="like-label">${liked ? 'જય મુરલીધર!' : 'જય મુરલીધર'}</span>
+            <span class="like-count-num" id="likes-${p.id}">${likeCount > 0 ? `(${likeCount})` : ''}</span>
+          </button>
+          <button class="action-btn" onclick="this.closest('.post-card').querySelector('.comment-input').focus()" title="Comment">
+            ${ICONS.comment}
+          </button>
+          <button class="action-btn" title="Share">${ICONS.share}</button>
+        </div>
+        <div class="post-actions-right">
+          <button class="action-btn" onclick="this.classList.toggle('bookmarked')">${ICONS.bookmark}</button>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="post-details">
+        ${p.caption ? `<div class="post-caption-row"><a class="cap-user">${escapeHtml(author.name || 'Member')}</a><span class="cap-text">${escapeHtml(p.caption)}</span></div>` : ''}
+        ${commentsHtml}
+        <div class="post-time">${timeAgo(p.created_at)}</div>
+      </div>
+
+      <!-- Comment input -->
+      <form class="post-comment-form" onsubmit="submitComment(event, '${p.id}')">
+        <input class="comment-input" type="text" placeholder="સમાજ સાથે ટિપ્પણી શેર કરો..." oninput="this.nextElementSibling.classList.toggle('active', this.value.trim().length > 0)">
+        <button type="submit" class="post-comment-btn">Post</button>
+      </form>
+    `;
+    listEl.appendChild(card);
+  });
+}
+
+/* ---- Like / Unlike ---- */
+function togglePostMenu(event, postId){
+  event.stopPropagation();
+  const menu = document.getElementById('post-menu-' + postId);
+  if(!menu) return;
+  document.querySelectorAll('.post-menu').forEach(item => {
+    if(item !== menu) item.hidden = true;
+  });
+  menu.hidden = !menu.hidden;
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.post-menu').forEach(menu => { menu.hidden = true; });
+});
+
+async function deletePost(postId){
+  if(!confirm(t('confirmDeletePost'))) return;
+  const { error } = await sb.from('posts').delete().eq('id', postId).eq('author_id', currentUser.id);
+  if(error){ alert(error.message); return; }
+  const card = document.getElementById('post-' + postId);
+  if(card) card.remove();
+}
+
+async function reportPost(postId){
+  if(!confirm(t('confirmReportPost'))) return;
+  const { error } = await sb.from('post_reports').insert({ post_id: postId, reporter_id: currentUser.id });
+  if(error && error.code !== '23505'){ alert(error.message); return; }
+  const card = document.getElementById('post-' + postId);
+  if(card) card.remove();
+  alert(error ? t('alreadyReported') : t('postReported'));
+}
+
+async function toggleLike(btn, postId){
+  const isLiked = btn.classList.contains('liked');
+  btn.classList.toggle('liked');
+  
+  const feather = btn.querySelector('.feather-anim-icon');
+  if (feather) {
+    feather.style.transform = isLiked ? 'scale(1)' : 'scale(1.3) rotate(-20deg)';
+    setTimeout(() => { feather.style.transform = 'scale(1) rotate(0deg)'; }, 250);
+  }
+
+  const label = btn.querySelector('.like-label');
+  if (label) label.textContent = !isLiked ? 'જય મુરલીધર!' : 'જય મુરલીધર';
+
+  if(isLiked){
+    await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+  } else {
+    await sb.from('likes').insert({ post_id: postId, user_id: currentUser.id });
+  }
+  // Update count
+  const { count } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+  const countEl = document.getElementById('likes-' + postId);
+  if(countEl) countEl.textContent = count > 0 ? `(${count})` : '';
+}
+
+/* ---- Double-tap like ---- */
+function doubleTapLike(e, postId){
+  // Show heart animation
+  const wrap = e.currentTarget;
+  const heart = document.createElement('div');
+  heart.className = 'heart-anim';
+  heart.innerHTML = HEART_SVG;
+  wrap.appendChild(heart);
+  setTimeout(() => heart.remove(), 1000);
+
+  // Like the post if not already liked
+  const btn = document.querySelector(`[data-post-id="${postId}"]`);
+  if(btn && !btn.classList.contains('liked')){
+    toggleLike(btn, postId);
+  }
+}
+
+/* ---- Submit comment ---- */
+async function submitComment(e, postId){
+  e.preventDefault();
+  const input = e.target.querySelector('.comment-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  e.target.querySelector('.post-comment-btn').classList.remove('active');
+
+  await sb.from('comments').insert({ post_id: postId, user_id: currentUser.id, text });
+  loadFeed(); // Refresh to show new comment
+}
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages — Ahir Connect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <div class="main-panel main-panel-wide">
+            <div class="chat-layout">
+
+                <!-- Conversation list -->
+                <div class="chat-list">
+                    <div class="chat-list-header">
+                        <span id="chatTitle">Messages</span>
+                    </div>
+                    <div id="chatFriendList"></div>
+                </div>
+
+                <!-- Thread -->
+                <div class="chat-thread" id="chatThreadWrap">
+                    <div class="chat-placeholder">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span id="chatEmptyTitle" style="font-size:20px;font-weight:400;color:var(--text);margin-top:8px;">Your messages</span>
+                        <span id="chatEmptyText" style="color:var(--text-2);font-size:14px;">Send a message to start a conversation.</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
+    <script src="shared/utils.js"></script>
+    <script>
+        let currentUser, currentProfile, selectedChatFriend = null,
+            chatChannel = null;
+
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            currentUser = ctx.user;
+            currentProfile = ctx.profile;
+            renderSidebar('messages', currentUser, currentProfile);
+            applyChatLanguage();
+            markChatSeen(currentUser.id);
+            loadFriendListForChat();
+
+            const params = new URLSearchParams(window.location.search);
+            const withId = params.get('with');
+            if (withId) openChat(withId, null, null);
+        })();
+
+        function applyChatLanguage() {
+            document.documentElement.lang = getCurrentLang();
+            document.getElementById('chatTitle').textContent = t('messagesTitle');
+            document.getElementById('chatEmptyTitle').textContent = t('messagesEmptyTitle');
+            document.getElementById('chatEmptyText').textContent = t('messagesEmptyText');
+        }
+
+        async function loadFriendListForChat() {
+            const {
+                data: friends,
+                error
+            } = await sb
+                .from('friendships')
+                .select('friend_id, profiles:friend_id ( name, avatar_url )')
+                .eq('user_id', currentUser.id);
+
+            const listEl = document.getElementById('chatFriendList');
+            if (error) {
+                listEl.innerHTML = `<div style="padding:16px;font-size:13px;color:var(--text-2)">Error loading</div>`;
+                return;
+            }
+            if (!friends || friends.length === 0) {
+                listEl.innerHTML = `<div style="padding:20px 16px;font-size:14px;color:var(--text-2)">${t('noConversations')}</div>`;
+                return;
+            }
+            listEl.innerHTML = '';
+            friends.forEach(f => {
+                const u = f.profiles || {};
+                const item = document.createElement('div');
+                item.className = 'chat-list-item';
+                item.dataset.friendId = f.friend_id;
+                item.innerHTML = `
+      <a href="profile.html?id=${f.friend_id}" onclick="event.stopPropagation()">
+        <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}">
+      </a>
+      <div>
+        <div class="chat-list-name">${escapeHtml(u.name||'Member')}</div>
+        <div class="chat-list-preview">${t('tapToMessage')}</div>
+      </div>`;
+                item.onclick = () => openChat(f.friend_id, u.name, item);
+                listEl.appendChild(item);
+            });
+        }
+
+        async function openChat(friendId, friendName, itemEl) {
+            selectedChatFriend = friendId;
+            document.querySelectorAll('.chat-list-item').forEach(i => i.classList.remove('active'));
+            if (itemEl) {
+                itemEl.classList.add('active');
+            } else {
+                const match = document.querySelector(`.chat-list-item[data-friend-id="${friendId}"]`);
+                if (match) {
+                    match.classList.add('active');
+                    friendName = match.querySelector('.chat-list-name').textContent;
+                }
+            }
+
+            const wrap = document.getElementById('chatThreadWrap');
+            wrap.innerHTML = `
+    <div class="chat-thread-header">
+      <img class="avatar" src="${defaultAvatar(friendName)}">
+      <span>${escapeHtml(friendName||'Friend')}</span>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="${getCurrentLang() === 'gu' ? 'સંદેશ...' : 'Message...'}">
+    <button id="chatSendBtn">${t('send')}</button>
+    </div>`;
+
+            const cid = chatIdFor(currentUser.id, friendId);
+
+            async function refreshMessages() {
+                const {
+                    data: msgs
+                } = await sb
+                    .from('messages').select('*').eq('chat_id', cid).order('created_at', {
+                        ascending: true
+                    });
+                const msgsEl = document.getElementById('chatMessages');
+                if (!msgsEl) return;
+                msgsEl.innerHTML = '';
+                (msgs || []).forEach(m => {
+                    const mine = m.sender_id === currentUser.id;
+                    msgsEl.innerHTML += `<div class="msg-bubble ${mine?'msg-mine':'msg-theirs'}">${escapeHtml(m.text)}</div>`;
+                });
+                msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+            await refreshMessages();
+
+            if (chatChannel) sb.removeChannel(chatChannel);
+            chatChannel = sb.channel('room:' + cid)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `chat_id=eq.${cid}`
+                }, () => refreshMessages())
+                .subscribe();
+
+            document.getElementById('chatSendBtn').onclick = sendChatMessage;
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !selectedChatFriend) return;
+            const cid = chatIdFor(currentUser.id, selectedChatFriend);
+            input.value = '';
+            const {
+                error
+            } = await sb.from('messages').insert({
+                chat_id: cid,
+                sender_id: currentUser.id,
+                recipient_id: selectedChatFriend,
+                text
+            });
+            if (error) alert(error.message);
+        }
+    </script>
+</body>
+
+</html>

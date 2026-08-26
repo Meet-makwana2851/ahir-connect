@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In — Ahir Connect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
+</head>
+
+<body>
+    <div class="auth-wrap">
+        <div class="auth-card" style="border-radius:18px; border:1px solid var(--border-gold); box-shadow:var(--shadow-md);">
+            <div class="brand-row">
+                <span class="brand"><span style="color:var(--text);">Ahir</span><span style="color:var(--accent);"> Connect</span></span>
+            </div>
+            <div class="tagline" style="color:var(--text-2); font-weight:500; margin-bottom:18px;">
+                <span style="font-size:13px;">Connecting the Ahir Samaj & Yaduvanshis everywhere</span>
+            </div>
+            <div class="error-msg" id="authError"></div>
+
+            <form id="loginForm">
+                <div class="field"><label>Email</label><input type="email" id="loginEmail" required placeholder="Email"></div>
+                <div class="field"><label>Password</label><input type="password" id="loginPassword" required placeholder="Password"></div>
+                <button class="btn btn-primary" type="submit" id="loginBtn" style="margin-top:8px; border-radius:9999px; background:var(--accent);">Log In</button>
+            </form>
+
+            <div class="or-divider">OR</div>
+
+            <div class="switch-auth">Don't have an account? <a href="signup.html" style="font-weight:700; color:var(--peacock-teal);">Sign up</a></div>
+        </div>
+    </div>
+
+    <script src="shared/config.js"></script>
+    <script>
+        // If already logged in, skip straight to the app
+        (async() => {
+            const {
+                data: {
+                    session
+                }
+            } = await sb.auth.getSession();
+            if (session?.user) window.location.href = 'home.html';
+        })();
+
+        document.getElementById('loginForm').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('authError');
+            errEl.style.display = 'none';
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            const {
+                error
+            } = await sb.auth.signInWithPassword({
+                email: document.getElementById('loginEmail').value.trim(),
+                password: document.getElementById('loginPassword').value
+            });
+
+            if (error) {
+                errEl.textContent = error.message;
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Log In 🪶';
+            } else {
+                window.location.href = 'home.html';
+            }
+        });
+    </script>
+</body>
+
+</html>

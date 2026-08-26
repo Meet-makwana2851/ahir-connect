@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Directory — Ahir Connect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <div class="main-panel main-panel-wide">
+
+            <!-- Directory Heading -->
+            <div class="directory-heading">
+                <div>
+                    <h1 id="dirTitle">👥 Member Directory</h1>
+                    <div id="dirSubtitle" style="font-size:13px; color:var(--text-2); margin-top:4px;">Find community members by name, native village, profession or residential city</div>
+                </div>
+                <span id="memberCount" style="font-weight:700; color:var(--peacock-teal);"></span>
+            </div>
+
+            <!-- Search bar -->
+            <div class="search-page-bar" style="margin-bottom:14px;">
+                <span class="search-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" id="userSearch" list="locationSuggestions" placeholder="Search by name, village, occupation or city...">
+                <datalist id="locationSuggestions"></datalist>
+            </div>
+
+            <!-- Quick Filter Row -->
+            <div class="directory-filter-row" style="display:flex; gap:10px; flex-wrap:wrap;">
+                <select class="directory-filter-select" id="filterVillage" title="Filter by village" onchange="applyFilters()">
+                    <option value="" id="optAllVillages">All Villages</option>
+                </select>
+                <select class="directory-filter-select" id="filterDistrict" title="Filter by district" onchange="applyFilters()">
+                    <option value="" id="optAllDistricts">All Districts</option>
+                </select>
+                <select class="directory-filter-select" id="filterOccupation" title="Filter by occupation" onchange="applyFilters()">
+                    <option value="" id="optAllOccupations">All Occupations</option>
+                </select>
+            </div>
+
+            <div id="searchResults" class="member-directory"></div>
+
+        </div>
+    </div>
+
+    <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
+    <script src="shared/utils.js"></script>
+    <script src="villagesByDistrict.js"></script>
+    <script>
+        let currentUser, currentProfile;
+        let allMembers = [];
+        const uniqueVillageNames = [...new Set(allVillages.map(village => village.name))]
+            .sort((a, b) => a.localeCompare(b));
+
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            currentUser = ctx.user;
+            currentProfile = ctx.profile;
+            renderSidebar('search', currentUser, currentProfile);
+            applyI18nDirectory();
+            buildLocationDropdowns();
+            loadMembers();
+        })();
+
+        function applyI18nDirectory() {
+            document.getElementById('userSearch').placeholder = 'Search by name, village, occupation or city...';
+            document.getElementById('optAllDistricts').textContent = t('allDistricts');
+            document.getElementById('dirTitle').textContent = getCurrentLang() === 'gu' ? '👥 સભ્ય ડિરેક્ટરી' : '👥 Member Directory';
+            document.getElementById('dirSubtitle').textContent = getCurrentLang() === 'gu' ? 'નામ, રહેઠાણના ગામ અથવા શહેર અને વ્યવસાયથી સભ્યો શોધો' : 'Find community members by name, residential city or village, and occupation';
+            document.getElementById('userSearch').placeholder = getCurrentLang() === 'gu' ? 'નામ, ગામ, વ્યવસાય અથવા શહેર શોધો...' : 'Search by name, village, occupation or city...';
+            document.getElementById('optAllVillages').textContent = t('allVillages');
+            document.getElementById('optAllOccupations').textContent = t('allOccupations');
+        }
+
+        function buildLocationDropdowns() {
+            const districtSelect = document.getElementById('filterDistrict');
+            const villageSelect = document.getElementById('filterVillage');
+            const currentDistrict = districtSelect.value;
+            const currentVillage = villageSelect.value;
+
+            districtSelect.innerHTML = '<option value="" id="optAllDistricts">All Districts</option>';
+            districtNames.forEach(district => {
+                const option = document.createElement('option');
+                option.value = district;
+                option.textContent = district;
+                option.selected = district === currentDistrict;
+                districtSelect.appendChild(option);
+            });
+            document.getElementById('optAllDistricts').textContent = t('allDistricts');
+
+            populateVillageDropdown(currentDistrict, currentVillage);
+
+            updateSearchSuggestions();
+        }
+
+        function populateVillageDropdown(district, selectedVillage = '') {
+            const villageSelect = document.getElementById('filterVillage');
+            villageSelect.innerHTML = district ?
+                `<option value="">${t('allVillages')}</option>` :
+                `<option value="">${t('selectDistrictFirst')}</option>`;
+
+            if (!district) return;
+
+            [...new Set(villagesByDistrict[district] || [])]
+            .sort((a, b) => a.localeCompare(b))
+                .forEach(village => {
+                    const option = document.createElement('option');
+                    option.value = village;
+                    option.textContent = village;
+                    option.selected = village === selectedVillage;
+                    villageSelect.appendChild(option);
+                });
+        }
+
+        function updateSearchSuggestions() {
+            const input = document.getElementById('userSearch');
+            const district = document.getElementById('filterDistrict').value;
+            let suggestions = district ? [...new Set(villagesByDistrict[district] || [])].map(name => ({
+                    name,
+                    district
+                })) :
+                districtNames.map(name => ({
+                    name,
+                    district: name
+                })).concat(uniqueVillageNames.map(name => ({
+                    name,
+                    district: ''
+                })));
+            const term = input.value.trim().toLowerCase();
+            const seenNames = new Set();
+
+            suggestions = suggestions
+                .filter(item => !term || item.name.toLowerCase().includes(term) || item.district.toLowerCase().includes(term))
+                .filter(item => {
+                    const normalizedName = item.name.toLowerCase();
+                    if (seenNames.has(normalizedName)) return false;
+                    seenNames.add(normalizedName);
+                    return true;
+                })
+                .slice(0, 50);
+
+            document.getElementById('locationSuggestions').innerHTML = suggestions
+                .map(item => `<option value="${escapeHtml(item.name)}"></option>`)
+                .join('');
+        }
+
+        function occupationLabel(type, field) {
+            const typeLabels = {
+                student: 'Student',
+                government: 'Government Sector',
+                private: 'Private Sector'
+            };
+            const typeLabel = typeLabels[type] || type || '';
+            return [typeLabel, field].filter(Boolean).join(' — ');
+        }
+
+        /* Build occupation dropdown from the edit-profile occupation fields. */
+        function buildOccupationDropdown(members) {
+            const select = document.getElementById('filterOccupation');
+            const current = select.value;
+            const occupations = Array.from(new Map(members
+                        .map(member => {
+                            const type = (member.occupation_type || '').trim();
+                            const field = (member.occupation_field || '').trim();
+                            const label = occupationLabel(type, field);
+                            return label ? [`${type}::${field}`, {
+                                key: `${type}::${field}`,
+                                label
+                            }] : null;
+                        })
+                        .filter(Boolean))
+                    .values())
+                .sort((a, b) => a.label.localeCompare(b.label));
+            select.innerHTML = `<option value="">${t('allOccupations')}</option>`;
+            occupations.forEach(occupation => {
+                const opt = document.createElement('option');
+                opt.value = occupation.key;
+                opt.textContent = occupation.label;
+                if (occupation.key === current) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        /* ---- Member directory ---- */
+        async function loadMembers() {
+            const results = document.getElementById('searchResults');
+            results.innerHTML = `<div class="empty-state">Loading members...</div>`;
+
+            const memberRequest = sb
+                .from('profiles')
+                .select('id, name, avatar_url, bio, gam, district, profession, occupation_type, occupation_field, residence_city')
+                .order('name');
+            let {
+                data: members,
+                error
+            } = await Promise.race([
+                memberRequest,
+                new Promise(resolve => setTimeout(() => resolve({
+                    data: null,
+                    error: {
+                        message: 'Member request timed out'
+                    }
+                }), 4000))
+            ]);
+
+            if (error) {
+                const fallback = await sb
+                    .from('profiles')
+                    .select('id, name, avatar_url, bio')
+                    .order('name');
+                members = fallback.data;
+                error = fallback.error;
+            }
+
+            if (error) {
+                results.innerHTML = `<div class="empty-state">Unable to load members. Please refresh and try again.</div>`;
+                return;
+            }
+            allMembers = members || [];
+            buildOccupationDropdown(allMembers);
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const term = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+            const district = document.getElementById('filterDistrict').value.toLowerCase();
+            const village = document.getElementById('filterVillage').value.toLowerCase();
+            const occupation = document.getElementById('filterOccupation').value.toLowerCase();
+
+            const filtered = allMembers.filter(u => {
+                const nameMatch = (u.name || '').toLowerCase().includes(term);
+                const gamMatch = (u.gam || '').toLowerCase().includes(term);
+                const profMatch = (u.profession || '').toLowerCase().includes(term);
+                const occupationMatch = occupationLabel(u.occupation_type, u.occupation_field).toLowerCase().includes(term);
+                const cityMatch = (u.residence_city || '').toLowerCase().includes(term);
+                const districtTermMatch = (u.district || '').toLowerCase().includes(term);
+                const matchesTerm = !term || (nameMatch || gamMatch || profMatch || occupationMatch || cityMatch || districtTermMatch);
+
+                const matchesDistrict = !district ||
+                    (u.district || '').toLowerCase().includes(district) ||
+                    (u.gam || '').toLowerCase().includes(district) ||
+                    (u.residence_city || '').toLowerCase().includes(district);
+
+                const matchesVillage = !village ||
+                    (u.residence_city || '').toLowerCase() === village ||
+                    (u.gam || '').toLowerCase() === village;
+
+                const matchesOccupation = !occupation ||
+                    `${(u.occupation_type || '').toLowerCase()}::${(u.occupation_field || '').toLowerCase()}` === occupation;
+
+                return matchesTerm && matchesDistrict && matchesVillage && matchesOccupation;
+            });
+
+            renderMembersList(filtered);
+        }
+
+        function renderMembersList(members) {
+            const results = document.getElementById('searchResults');
+            const label = t('membersFound');
+            document.getElementById('memberCount').textContent = `${members.length} ${label}`;
+
+            if (members.length === 0) {
+                results.innerHTML = `<div class="empty-state"><div class="big">🔍</div>${t('noMembers')}</div>`;
+                return;
+            }
+
+            results.innerHTML = members.map(u => `
+                <div class="user-row" onclick="window.location.href='profile.html?id=${u.id}'" style="cursor:pointer;">
+                    <a class="profile-link" href="profile.html?id=${u.id}" onclick="event.stopPropagation()">
+                        <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}" alt="${escapeHtml(u.name || 'Member')}">
+                    </a>
+                    <div class="user-row-info">
+                        <div class="post-author-name-row">
+                            <a class="name" href="profile.html?id=${u.id}" onclick="event.stopPropagation()">${escapeHtml(u.name || 'Member')}</a>
+                        </div>
+                        ${u.gam ? `<div style="font-size:12px; color:var(--peacock-teal); font-weight:600; margin-top:2px;">📍 ${t('gamLabel')}: ${escapeHtml(u.gam)}${u.district ? ` (${escapeHtml(u.district)})` : ''}</div>` : ''}
+                        ${u.residence_city ? `<div style="font-size:12px; color:var(--accent); font-weight:500; margin-top:2px;">🏙️ Lives in: ${escapeHtml(u.residence_city)}</div>` : ''}
+                        ${u.profession ? `<div style="font-size:11.5px; color:var(--text-2); margin-top:2px;">💼 ${escapeHtml(u.profession)}</div>` : ''}
+                        ${u.bio ? `<div class="sub">${escapeHtml(u.bio)}</div>` : ''}
+                    </div>
+                    <button class="small-btn btn-add" onclick="event.stopPropagation(); window.location.href='profile.html?id=${u.id}'" style="border-radius:9999px;">${t('viewProfile')}</button>
+                </div>
+            `).join('');
+        }
+
+        /* ---- Live search listener ---- */
+        let searchTimeout;
+        document.getElementById('userSearch').addEventListener('input', () => {
+            updateSearchSuggestions();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 200);
+        });
+
+        document.getElementById('filterDistrict').addEventListener('change', () => {
+            populateVillageDropdown(document.getElementById('filterDistrict').value);
+            updateSearchSuggestions();
+        });
+    </script>
+</body>
+
+</html>
