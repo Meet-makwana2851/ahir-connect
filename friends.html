@@ -36,7 +36,7 @@
             </div>
 
             <!-- Quick Filter Row -->
-            <div class="directory-filter-row">
+            <div class="directory-filter-row" style="display:flex; gap:10px; flex-wrap:wrap;">
                 <select class="directory-filter-select" id="filterDistrict" onchange="applyFilters()">
                     <option value="" id="optAllDistricts">All Districts</option>
                     <option value="Junagadh">Junagadh (જૂનાગઢ)</option>
@@ -47,6 +47,9 @@
                     <option value="Bhavnagar">Bhavnagar (ભાવનગર)</option>
                     <option value="Porbandar">Porbandar (પોરબંદર)</option>
                     <option value="Dwarka">Dwarka (દ્વારકા)</option>
+                </select>
+                <select class="directory-filter-select" id="filterProfession" onchange="applyFilters()">
+                    <option value="">All Professions</option>
                 </select>
             </div>
 
@@ -73,8 +76,26 @@
         })();
 
         function applyI18nDirectory() {
-            document.getElementById('userSearch').placeholder = t('searchPlaceholder');
+            document.getElementById('userSearch').placeholder = 'Search by name, village, profession or city...';
             document.getElementById('optAllDistricts').textContent = t('allDistricts');
+        }
+
+        /* Build profession dropdown from actual member data */
+        function buildProfessionDropdown(members) {
+            const select = document.getElementById('filterProfession');
+            const current = select.value;
+            const professions = [...new Set(
+                members.map(u => (u.profession || '').trim()).filter(Boolean)
+            )].sort();
+
+            select.innerHTML = '<option value="">All Professions</option>';
+            professions.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                if (p === current) opt.selected = true;
+                select.appendChild(opt);
+            });
         }
 
         /* ---- Member directory ---- */
@@ -92,12 +113,14 @@
                 return;
             }
             allMembers = members || [];
+            buildProfessionDropdown(allMembers);
             applyFilters();
         }
 
         function applyFilters() {
             const term = (document.getElementById('userSearch').value || '').trim().toLowerCase();
             const district = document.getElementById('filterDistrict').value.toLowerCase();
+            const profession = document.getElementById('filterProfession').value.toLowerCase();
 
             const filtered = allMembers.filter(u => {
                 const nameMatch = (u.name || '').toLowerCase().includes(term);
@@ -110,7 +133,10 @@
                     (u.district || '').toLowerCase().includes(district) ||
                     (u.gam || '').toLowerCase().includes(district);
 
-                return matchesTerm && matchesDistrict;
+                const matchesProfession = !profession ||
+                    (u.profession || '').toLowerCase() === profession;
+
+                return matchesTerm && matchesDistrict && matchesProfession;
             });
 
             renderMembersList(filtered);
