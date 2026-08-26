@@ -671,6 +671,18 @@ h3 {
 
 .post-header-info .username:hover {
     text-decoration: underline;
+    color: var(--accent);
+}
+
+.post-header a .avatar,
+.post-header .avatar {
+    cursor: pointer;
+    transition: opacity .15s;
+}
+
+.post-header a .avatar:hover,
+.post-header .avatar:hover {
+    opacity: 0.85;
 }
 
 .post-header-info .location {
@@ -1206,6 +1218,24 @@ h3 {
     font-weight: 600;
     font-size: 14px;
     color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.user-row-info .name:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.user-row .profile-link img,
+.user-row .avatar {
+    cursor: pointer;
+    transition: opacity .15s;
+}
+
+.user-row .profile-link img:hover,
+.user-row .avatar:hover {
+    opacity: 0.85;
 }
 
 .user-row-info .sub {
