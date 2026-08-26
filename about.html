@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About AhirConnect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>
+        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <main class="main-panel about-panel">
+            <a class="about-back" href="more.html" aria-label="Back to settings">← <span>Settings</span></a>
+
+            <section class="about-hero">
+                <p class="about-kicker">AhirConnect</p>
+                <h1>Connected by roots,<br><em>united by community.</em></h1>
+                <p class="about-motto-gu">મૂળ સાથે જોડાયેલા, સમાજની એકતાથી બંધાયેલા.</p>
+            </section>
+
+            <section class="about-section about-intro">
+                <p class="about-eyebrow">Our story</p>
+                <h2>One community, many journeys.</h2>
+                <p>AhirConnect began with a simple yet meaningful idea: to create a dedicated digital space for the Ahir community. It was envisioned as a place where people from villages and cities across Gujarat could remain connected, discover their shared history, celebrate their heritage, and strengthen their sense of belonging.</p>
+                <p>What began as an idea has grown into a community platform built around unity, identity, knowledge, and connection.</p>
+            </section>
+
+            <section class="about-section about-why">
+                <div>
+                    <p class="about-eyebrow">Why AhirConnect?</p>
+                    <h2>A shared space for a shared heritage.</h2>
+                </div>
+                <p>Every community grows stronger when its people have a common space to connect, communicate, and contribute. AhirConnect brings together our people, stories, knowledge, celebrations, opportunities, and important updates in one dedicated community platform. It is designed to make distance feel smaller, preserve the richness of our heritage, and encourage meaningful connections among Ahirs across Gujarat.</p>
+            </section>
+
+            <section class="about-section about-beliefs">
+                <p class="about-eyebrow">What we believe</p>
+                <h2>Our roots are the beginning of our future.</h2>
+                <p>We believe that our roots are not merely a part of our past; they are the foundation upon which our future is built. We believe in preserving our history, respecting our traditions, embracing knowledge, and creating opportunities for every member of the community. Above all, we believe that unity is strengthened when people come together with empathy, dignity, and a shared sense of responsibility.</p>
+                <div class="belief-list" aria-label="Our values">
+                    <span>Unity</span>
+                    <span>Heritage</span>
+                    <span>Knowledge</span>
+                    <span>Belonging</span>
+                </div>
+            </section>
+
+            <section class="about-section about-people">
+                <p class="about-eyebrow">The people behind AhirConnect</p>
+                <h2>Built with curiosity and purpose.</h2>
+                <div class="people-grid">
+                    <article class="person-card">
+                        <div class="person-photo" role="img" aria-label="Photo placeholder for Meet Makwana"><span>Photo</span></div>
+                        <div class="person-copy">
+                            <h3>Meet Makwana</h3>
+                            <p>Meet is a developer who loves turning ambitious ideas into working products. His interests sit at the intersection of AI/ML, Blockchain, Web3, and full-stack development, with a particular curiosity for how emerging technologies can solve real-world problems. From building AI-powered systems and RAG applications to decentralized platforms, backend architectures, and community-focused products like AhirConnect, he enjoys exploring the entire journey from an idea to something people can actually use. He is constantly experimenting with new technologies, learning by building, and pushing himself beyond the usual boundaries of development. For Meet, coding isn’t just about writing software—it’s about creating, experimenting, solving problems, and building something that matters.</p>
+                        </div>
+                    </article>
+                    <article class="person-card">
+                        <div class="person-photo" role="img" aria-label="Photo placeholder for Hetavi Makwana"><span>Photo</span></div>
+                        <div class="person-copy">
+                            <h3>Hetavi Makwana</h3>
+                            <p>Hetavi is a Computer Engineering student with a keen interest in artificial intelligence, intelligent systems, cybersecurity, and full-stack product development. Her work focuses on exploring how emerging technologies can be turned into practical, meaningful applications—from AI assistants and data-driven prediction systems to secure, full-stack platforms such as ANVAYA, a clinical technology platform combining AI, machine learning, and security-focused architecture. She enjoys working across the stack, experimenting with new technologies, and understanding how individual components come together to build reliable systems. Alongside her technical pursuits, she has taken on leadership roles in student communities and participated in national-level hackathons and entrepreneurship initiatives. Her approach to technology is driven by curiosity, experimentation, and a constant interest in building things that go beyond the classroom.</p>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <footer class="about-footer">Our roots. Our history. Our community. <strong>One AhirConnect.</strong></footer>
+        </main>
+    </div>
+
+    <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
+    <script src="shared/utils.js"></script>
+    <script>
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            renderSidebar('more', ctx.user, ctx.profile);
+        })();
+    </script>
+</body>
+
+</html>
