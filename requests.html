@@ -82,9 +82,8 @@
       <div class="notif-item">
         <a href="profile.html?id=${notification.actor_id}"><img class="avatar" src="${actor.avatar_url || defaultAvatar(actor.name)}" alt="${escapeHtml(actor.name || 'Member')}"></a>
         <div class="notif-item-body">
-          <a class="username" href="profile.html?id=${notification.actor_id}"><strong>${escapeHtml(actor.name || 'Someone')}</strong></a> ${action}
-          ${comment ? `<div class="sub">${escapeHtml(comment)}</div>` : ''}
-          <span class="notif-time">${timeAgo(notification.created_at)}</span>
+          <div><a class="username" href="profile.html?id=${notification.actor_id}"><strong>${escapeHtml(actor.name || 'Someone')}</strong></a> ${action} <span class="notif-time">${timeAgo(notification.created_at)}</span></div>
+          ${comment ? `<div class="notif-comment-preview">${escapeHtml(comment)}</div>` : ''}
         </div>
         <a class="small-btn btn-add" href="home.html#post-${notification.post_id}">${t('viewPost')}</a>
       </div>`;

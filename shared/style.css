@@ -1652,7 +1652,8 @@ h3 {
     flex: 1;
     font-size: 14px;
     color: var(--text);
-    line-height: 0.5;
+    line-height: 1.4;
+    min-width: 0;
 }
 
 .notif-item-body strong {
@@ -1661,6 +1662,18 @@ h3 {
 
 .notif-item-body .notif-time {
     color: var(--text-2);
+    font-size: 12px;
+}
+
+.notif-comment-preview {
+    margin-top: 3px;
+    font-size: 12.5px;
+    color: var(--text-2);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
 }
 
 .notif-actions {
