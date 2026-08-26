@@ -77,8 +77,8 @@ function renderSidebar(activePage, user, profile) {
     ];
 
     const navHtml = navItems.map(item => {
-        const isActive = item.page === activePage;
-        return `
+                const isActive = item.page === activePage;
+                return `
     <a class="nav-item ${isActive ? 'active' : ''}" href="${item.href}">
       ${isActive && ICONS[item.icon + 'Fill'] ? ICONS[item.icon + 'Fill'] : (ICONS[item.icon] || ICONS.home)}
       <span class="nav-label">${item.label}</span>
@@ -138,12 +138,17 @@ function renderSidebar(activePage, user, profile) {
 async function refreshRequestDot(userId){
     const dot = document.getElementById('reqDot');
     if(!dot) return;
-    const { count } = await sb
-        .from('friend_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('to_id', userId)
-        .eq('status', 'pending');
-    dot.style.display = (count && count > 0) ? 'block' : 'none';
+    const [requestsRes, notificationsRes] = await Promise.all([
+        sb.from('friend_requests')
+            .select('*', { count: 'exact', head: true })
+            .eq('to_id', userId)
+            .eq('status', 'pending'),
+        sb.from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('recipient_id', userId)
+    ]);
+    const count = (requestsRes.count || 0) + (notificationsRes.count || 0);
+    dot.style.display = count > 0 ? 'block' : 'none';
 }
 
 /* Red dot — unread messages */

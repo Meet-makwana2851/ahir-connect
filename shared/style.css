@@ -2512,11 +2512,14 @@ button:hover,
     padding: 12px 14px;
 }
 
+
 /* ============================================================
    AHIRSETU COMMUNITY PORTAL COMPONENTS
    ============================================================ */
 
+
 /* Brand enhancements */
+
 .sidebar-brand .brand-subtext {
     font-size: 11px;
     font-weight: 700;
@@ -2530,7 +2533,9 @@ button:hover,
     filter: drop-shadow(0 0 4px rgba(0, 128, 117, 0.4));
 }
 
+
 /* Bhagavad Gita Shloka Card */
+
 .shloka-card {
     background: linear-gradient(135deg, #07172C 0%, #0D274C 50%, #024B45 100%);
     border: 1.5px solid var(--pitambar-gold);
@@ -2587,7 +2592,9 @@ button:hover,
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+
 /* Pinned Samaj Circular Banner */
+
 .circular-banner {
     background: linear-gradient(90deg, #FFF9EB 0%, #FFFFFF 100%);
     border: 1.5px solid #F0C968;
@@ -2647,7 +2654,9 @@ html.dark .circular-banner {
     transform: scale(1.04);
 }
 
+
 /* Author Community Badges */
+
 .post-author-name-row {
     display: flex;
     align-items: center;
@@ -2672,7 +2681,9 @@ html.dark .circular-banner {
     margin-top: 2px;
 }
 
+
 /* Mor Pankh Reaction Button */
+
 .mor-pankh-like-btn {
     display: inline-flex;
     align-items: center;
@@ -2710,7 +2721,9 @@ html.dark .circular-banner {
     transform: rotate(-15deg) scale(1.2);
 }
 
+
 /* Dayro & Cultural Corner Grid */
+
 .dayro-section-header {
     margin-bottom: 20px;
 }
@@ -2792,7 +2805,80 @@ html.dark .circular-banner {
     font-weight: 600;
 }
 
+
+/* Heritage history and dayro split */
+
+.heritage-history h2,
+.heritage-dayro h2 {
+    margin: 12px 0 4px;
+    color: var(--pitambar-gold);
+    font-size: 16px;
+}
+
+.heritage-history-row {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.24);
+    color: #FFFBF0;
+}
+
+.heritage-history-row:last-child {
+    border-bottom: 0;
+}
+
+.heritage-history-icon {
+    flex: 0 0 24px;
+    font-size: 17px;
+    line-height: 1.4;
+}
+
+.heritage-history-row strong {
+    color: var(--pitambar-gold);
+    font-size: 13px;
+}
+
+.heritage-history-row p {
+    margin: 3px 0 0;
+    color: #E2E8F0;
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.heritage-dayro {
+    margin-top: 14px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(212, 175, 55, 0.24);
+}
+
+.heritage-dayro blockquote {
+    margin: 8px 0 0;
+    padding: 8px 0 8px 14px;
+    border-left: 3px solid var(--pitambar-gold);
+    color: #FFFBF0;
+    font-size: 16px;
+    font-style: italic;
+    line-height: 1.55;
+}
+
+.heritage-dayro cite {
+    display: block;
+    margin-top: 5px;
+    color: #CBD5E1;
+    font-size: 11px;
+    font-style: normal;
+}
+
+.heritage-source {
+    margin-top: 16px;
+    color: #94A3B8;
+    font-size: 11px;
+    text-align: right;
+}
+
+
 /* Directory Filter Row */
+
 .directory-filter-row {
     display: flex;
     gap: 12px;

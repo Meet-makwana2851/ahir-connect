@@ -24,8 +24,7 @@
                     <span class="shloka-chapter" id="shlokaChapter">Chapter 2, Verse 47</span>
                 </div>
                 <div class="shloka-sanskrit" id="shlokaSanskrit">
-                    कर्मण्येवाधिकारस्ते मा फलेषु कदाचन ।<br>
-                    मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि ॥
+                    कर्मण्येवाधिकारस्ते मा फलेषु कदाचन ।<br> मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि ॥
                 </div>
                 <div class="shloka-meaning" id="shlokaMeaningGu">
                     "કર્મ કરવાનો જ તમારો અધિકાર છે, ફળ પર ક્યારેય નહીં. કર્મફળની ઇચ્છા રાખીને કાર્ય ન કરો અને કર્મ ન કરવામાં પણ આસક્તિ ન રાખો."
@@ -73,7 +72,7 @@
     <div class="modal-backdrop" id="createModal" style="display:none;">
         <div class="modal-card">
             <div class="modal-header">
-                <span>Create new post</span>
+                <span id="createPostTitle">Create new post</span>
                 <button class="modal-close" id="closeCreateModal">✕</button>
             </div>
             <div class="modal-body">
@@ -83,7 +82,7 @@
             <div class="modal-footer">
                 <label class="file-label">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Photo / Video
+        <span id="photoVideoLabel">Photo / Video</span>
         <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none;">
       </label>
                 <button class="btn btn-primary" style="width:auto;padding:8px 24px;border-radius:8px;font-size:14px;" id="postBtn">Share</button>
@@ -105,6 +104,8 @@
             currentUser = ctx.user;
             currentProfile = ctx.profile;
             renderSidebar('home', currentUser, currentProfile);
+            applyHomeLanguage();
+            if (new URLSearchParams(window.location.search).get('create') === '1') openCreateModal();
             renderAnnouncementBanner();
             renderDailyShloka();
             loadStories();
@@ -121,6 +122,14 @@
             if (titleEl) titleEl.textContent = t('announcementTitle');
             if (descEl) descEl.textContent = t('announcementDesc');
             if (btnEl) btnEl.textContent = t('announcementBtn');
+        }
+
+        function applyHomeLanguage() {
+            document.documentElement.lang = getCurrentLang();
+            document.getElementById('createPostTitle').textContent = t('createPost');
+            document.getElementById('postCaption').placeholder = t('writeCaption');
+            document.getElementById('photoVideoLabel').textContent = t('photoVideo');
+            document.getElementById('postBtn').textContent = t('share');
         }
 
         function renderDailyShloka() {
@@ -399,6 +408,8 @@ async function loadFeed(){
   });
 
   renderFeed(posts, likeCountMap, myLikes, commentMap);
+  const targetPost = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null;
+  if(targetPost) targetPost.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   if(feedChannel) sb.removeChannel(feedChannel);
   feedChannel = sb.channel('public:posts')
@@ -442,6 +453,7 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
 
     const card = document.createElement('div');
     card.className = 'post-card';
+    card.id = `post-${p.id}`;
     card.innerHTML = `
       <!-- Header -->
       <div class="post-header">
@@ -452,7 +464,14 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
           </div>
           ${author.gam ? `<div class="tag-gam">📍 ${t('gamLabel')}: ${escapeHtml(author.gam)}${author.district ? ` (${escapeHtml(author.district)})` : ''}</div>` : ''}
         </div>
-        <button class="post-more-btn">⋯</button>
+        <div class="post-menu-wrap">
+          <button class="post-more-btn" onclick="togglePostMenu(event, '${p.id}')" aria-label="Post options">⋯</button>
+          <div class="post-menu" id="post-menu-${p.id}" hidden>
+            ${author.id === currentUser.id
+              ? `<button type="button" onclick="deletePost('${p.id}')">${t('deletePost')}</button>`
+              : `<button type="button" onclick="reportPost('${p.id}')">${t('reportPost')}</button>`}
+          </div>
+        </div>
       </div>
 
       <!-- Media -->
@@ -494,6 +513,37 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
 }
 
 /* ---- Like / Unlike ---- */
+function togglePostMenu(event, postId){
+  event.stopPropagation();
+  const menu = document.getElementById('post-menu-' + postId);
+  if(!menu) return;
+  document.querySelectorAll('.post-menu').forEach(item => {
+    if(item !== menu) item.hidden = true;
+  });
+  menu.hidden = !menu.hidden;
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.post-menu').forEach(menu => { menu.hidden = true; });
+});
+
+async function deletePost(postId){
+  if(!confirm(t('confirmDeletePost'))) return;
+  const { error } = await sb.from('posts').delete().eq('id', postId).eq('author_id', currentUser.id);
+  if(error){ alert(error.message); return; }
+  const card = document.getElementById('post-' + postId);
+  if(card) card.remove();
+}
+
+async function reportPost(postId){
+  if(!confirm(t('confirmReportPost'))) return;
+  const { error } = await sb.from('post_reports').insert({ post_id: postId, reporter_id: currentUser.id });
+  if(error && error.code !== '23505'){ alert(error.message); return; }
+  const card = document.getElementById('post-' + postId);
+  if(card) card.remove();
+  alert(error ? t('alreadyReported') : t('postReported'));
+}
+
 async function toggleLike(btn, postId){
   const isLiked = btn.classList.contains('liked');
   btn.classList.toggle('liked');

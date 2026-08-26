@@ -69,7 +69,7 @@
             <!-- About / profile information -->
             <section id="profileAbout" style="margin:28px 0 8px; padding:24px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
                 <div style="font-size:13px; font-weight:700; letter-spacing:.08em; color:var(--text-2); margin-bottom:18px;">
-                    ABOUT</div>
+                    <span id="aboutLabel">ABOUT</span></div>
                 <div id="detailGrid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 48px;">
                 </div>
             </section>
@@ -83,7 +83,7 @@
                         <rect x="3" y="14" width="7" height="7" />
                         <rect x="14" y="14" width="7" height="7" />
                     </svg>
-                    POSTS
+                    <span id="postsLabel">POSTS</span>
                 </button>
             </div>
 
@@ -106,15 +106,8 @@
                     <textarea id="editBio" rows="3" placeholder="Tell people about yourself..."></textarea>
                 </div>
 
-                <div class="form-section-label" style="margin-top:0; font-weight:700; color:var(--peacock-teal); margin-bottom:8px;">🪶 Samaj Identity</div>
-                <div class="field-row" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div class="field"><label>Native Village (મૂળ ગામ)</label><input type="text" id="editGam" placeholder="e.g. Junagadh, Madhavpur"></div>
-                    <div class="field"><label>District (જિલ્લો)</label><input type="text" id="editDistrict" placeholder="e.g. Kutch, Saurashtra"></div>
-                </div>
-                <div class="field"><label>Profession / Business (વ્યવસાય)</label><input type="text" id="editProfession" placeholder="e.g. Advocate, Dairy Farm, IT"></div>
-
                 <div class="form-section-label" style="margin-top:14px; font-weight:700; color:var(--text-2); margin-bottom:8px;">Personal Details</div>
-                <div class="field"><label>Residence City</label><input type="text" id="editCity"></div>
+                <div class="field"><label>Residential City or Village</label><input type="text" id="editCity" list="residenceSuggestions" placeholder="e.g. Ahmedabad or Junagadh"><datalist id="residenceSuggestions"></datalist></div>
                 <div class="field"><label>Educational Background</label><input type="text" id="editEducation"></div>
 
                 <div class="field-row">
@@ -163,6 +156,7 @@
     <script src="shared/config.js"></script>
     <script src="shared/i18n.js"></script>
     <script src="shared/utils.js"></script>
+    <script src="villagesByDistrict.js"></script>
     <script>
         let currentUser, currentProfile;
 
@@ -187,6 +181,7 @@
                 document.getElementById('profileAbout').style.display = 'none'; // add this line
             }
             renderSidebar(isOwnProfile ? 'profile' : '', currentUser, ctx.profile);
+            applyProfileLanguage();
 
             document.getElementById('profAvatar').src = currentProfile.avatar_url || defaultAvatar(currentProfile.name);
             document.getElementById('profName').textContent = currentProfile.name || 'Member';
@@ -198,6 +193,33 @@
             loadProfileStats();
             loadProfilePosts();
         })();
+
+        function applyProfileLanguage() {
+            document.documentElement.lang = getCurrentLang();
+            document.getElementById('editProfileBtn').textContent = t('editProfileAction');
+            document.getElementById('aboutLabel').textContent = t('about');
+            document.getElementById('postsLabel').textContent = t('posts');
+            document.getElementById('editBio').placeholder = t('tellAbout');
+            document.getElementById('editCity').previousElementSibling.textContent = t('residentialCityVillage');
+            document.getElementById('editEducation').previousElementSibling.textContent = t('educationalBackground');
+            document.getElementById('editOccType').previousElementSibling.textContent = t('occupation');
+            document.getElementById('editOccField').previousElementSibling.textContent = t('fieldOfWork');
+            document.getElementById('editPastExp').previousElementSibling.textContent = t('pastWorkExperience');
+            document.getElementById('editBirthDate').previousElementSibling.textContent = t('birthDate');
+            document.getElementById('editMaritalStatus').previousElementSibling.textContent = t('maritalStatus');
+            const occupationOptions = document.querySelectorAll('#editOccType option');
+            if (occupationOptions.length >= 4 && getCurrentLang() === 'gu') {
+                occupationOptions[0].textContent = '— સેટ નથી —';
+                occupationOptions[1].textContent = 'વિદ્યાર્થી';
+                occupationOptions[2].textContent = 'સરકારી ક્ષેત્ર';
+                occupationOptions[3].textContent = 'ખાનગી ક્ષેત્ર';
+            }
+            const fieldOptions = document.querySelectorAll('#editOccField option');
+            const guFields = ['— સેટ નથી —', 'આઈટી', 'આરોગ્યસંભાળ', 'શિક્ષણ', 'વ્યવસાય', 'કૃષિ', 'એન્જિનિયરિંગ', 'નાણાં', 'અન્ય'];
+            if (getCurrentLang() === 'gu') fieldOptions.forEach((option, index) => {
+                option.textContent = guFields[index] || option.textContent;
+            });
+        }
 
         function updateProfileHeader(p) {
             document.getElementById('profName').textContent = p.name || 'Member';
@@ -218,6 +240,25 @@
 
         function occLabel(p) {
             if (!p.occupation_type) return '';
+            if (getCurrentLang() === 'gu') {
+                const guMap = {
+                    student: 'વિદ્યાર્થી',
+                    government: 'સરકારી ક્ષેત્ર',
+                    private: 'ખાનગી ક્ષેત્ર'
+                };
+                const guFields = {
+                    IT: 'આઈટી',
+                    Healthcare: 'આરોગ્યસંભાળ',
+                    Education: 'શિક્ષણ',
+                    Business: 'વ્યવસાય',
+                    Agriculture: 'કૃષિ',
+                    Engineering: 'એન્જિનિયરિંગ',
+                    Finance: 'નાણાં'
+                };
+                const base = guMap[p.occupation_type] || p.occupation_type;
+                const field = guFields[p.occupation_field] || p.occupation_field;
+                return field ? `${base} — ${field}` : base;
+            }
             const map = {
                 student: 'Student',
                 government: 'Government Sector',
@@ -228,6 +269,7 @@
         }
 
         function maritalLabel(v) {
+            if (getCurrentLang() === 'gu') return v === 'single' ? 'અપરિણીત' : v === 'married' ? 'પરિણીત' : '';
             return v === 'single' ? 'Single' : v === 'married' ? 'Married' : '';
         }
 
@@ -245,18 +287,15 @@
         function renderDetailGrid(p) {
             const grid = document.getElementById('detailGrid');
             const rows = [
-                ['🪶', 'Native Village', p.gam],
-                ['📍', 'District', p.district],
-                ['💼', 'Profession / Business', p.profession],
-                ['🎓', 'Education', p.education],
-                ['🏙️', 'Current Residence', p.residence_city],
-                ['🧑‍💻', 'Work Experience', p.past_experience],
-                ['🎂', 'Birth Date', formatBirthDate(p.birth_date)],
-                ['💍', 'Marital Status', maritalLabel(p.marital_status)]
+                ['🎓', t('education'), p.education],
+                ['🏙️', t('currentResidence'), p.residence_city],
+                ['🧑‍💻', t('workExperience'), p.past_experience],
+                ['🎂', t('birthDate'), formatBirthDate(p.birth_date)],
+                ['💍', t('maritalStatus'), maritalLabel(p.marital_status)]
             ].filter(r => r[2]);
 
             if (rows.length === 0) {
-                grid.innerHTML = `<div style="grid-column:1/-1; color:var(--text-2); font-size:14px;">No profile details added yet. Click "Edit profile" to add your native village, profession and more.</div>`;
+                grid.innerHTML = `<div style="grid-column:1/-1; color:var(--text-2); font-size:14px;">${t('noProfileDetails')}</div>`;
                 return;
             }
 
@@ -272,9 +311,6 @@
 
         function fillEditForm(p) {
             document.getElementById('editBio').value = p.bio || '';
-            document.getElementById('editGam').value = p.gam || '';
-            document.getElementById('editDistrict').value = p.district || '';
-            document.getElementById('editProfession').value = p.profession || '';
             document.getElementById('editCity').value = p.residence_city || '';
             document.getElementById('editEducation').value = p.education || '';
             document.getElementById('editOccType').value = p.occupation_type || '';
@@ -291,14 +327,38 @@
             document.getElementById('editMaritalStatus').value = p.marital_status || '';
         }
 
+        function updateResidenceSuggestions() {
+            const input = document.getElementById('editCity');
+            const term = input.value.trim().toLowerCase();
+            const suggestions = allVillages
+                .map(village => village.name)
+                .filter((name, index, names) => names.indexOf(name) === index)
+                .filter(name => !term || name.toLowerCase().includes(term))
+                .sort((a, b) => a.localeCompare(b))
+                .slice(0, 50);
+
+            document.getElementById('residenceSuggestions').innerHTML = suggestions
+                .map(name => `<option value="${escapeHtml(name)}"></option>`)
+                .join('');
+        }
+
+        document.getElementById('editCity').addEventListener('focus', updateResidenceSuggestions);
+        document.getElementById('editCity').addEventListener('input', updateResidenceSuggestions);
+
         document.getElementById('editOccField').addEventListener('change', (e) => {
             document.getElementById('editOccOtherWrap').style.display = e.target.value === 'other' ? 'block' : 'none';
         });
 
         async function loadProfileStats() {
             const [postsRes, friendsRes] = await Promise.all([
-                sb.from('posts').select('*', { count: 'exact', head: true }).eq('author_id', currentProfile.id),
-                sb.from('friendships').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+                sb.from('posts').select('*', {
+                    count: 'exact',
+                    head: true
+                }).eq('author_id', currentProfile.id),
+                sb.from('friendships').select('*', {
+                    count: 'exact',
+                    head: true
+                }).eq('user_id', currentUser.id),
             ]);
             document.getElementById('postCount').textContent = postsRes.count || 0;
             document.getElementById('friendCount').textContent = friendsRes.count || 0;
@@ -306,10 +366,14 @@
 
         async function loadProfilePosts() {
             const grid = document.getElementById('postsGrid');
-            const { data: posts } = await sb.from('posts')
+            const {
+                data: posts
+            } = await sb.from('posts')
                 .select('id, media_url, media_type, caption')
                 .eq('author_id', currentProfile.id)
-                .order('created_at', { ascending: false });
+                .order('created_at', {
+                    ascending: false
+                });
 
             if (!posts || posts.length === 0) {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">📷</div>No posts yet</div>`;
@@ -317,8 +381,8 @@
             }
 
             grid.innerHTML = posts.map(p => {
-                if (p.media_url) {
-                    return `<div class="profile-grid-item">
+                        if (p.media_url) {
+                            return `<div class="profile-grid-item">
         ${p.media_type === 'video' ? `<video src="${p.media_url}" muted></video>` : `<img src="${p.media_url}" loading="lazy">`}
       </div>`;
                 } else {
@@ -347,9 +411,6 @@
 
             const updates = {
                 bio: document.getElementById('editBio').value.trim(),
-                gam: document.getElementById('editGam').value.trim(),
-                district: document.getElementById('editDistrict').value.trim(),
-                profession: document.getElementById('editProfession').value.trim(),
                 residence_city: document.getElementById('editCity').value.trim(),
                 education: document.getElementById('editEducation').value.trim(),
                 occupation_type: document.getElementById('editOccType').value,

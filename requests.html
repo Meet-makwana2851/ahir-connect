@@ -17,13 +17,14 @@
         <div id="sidebarMount"></div>
 
         <div class="main-panel">
-            <h2 style="font-size:24px;font-weight:700;margin-bottom:24px;">Notifications</h2>
+            <h2 id="notificationsTitle" style="font-size:24px;font-weight:700;margin-bottom:24px;">Notifications</h2>
 
             <div id="notifList"></div>
         </div>
     </div>
 
     <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
     <script src="shared/utils.js"></script>
     <script>
         let currentUser, currentProfile;
@@ -34,45 +35,80 @@
             currentUser = ctx.user;
             currentProfile = ctx.profile;
             renderSidebar('notifications', currentUser, currentProfile);
+            applyNotificationsLanguage();
             loadNotifications();
         })();
+
+        function applyNotificationsLanguage() {
+            document.documentElement.lang = getCurrentLang();
+            document.getElementById('notificationsTitle').textContent = t('notificationsTitle');
+        }
 
         async function loadNotifications() {
             const listEl = document.getElementById('notifList');
 
-            const {
-                data: requests
-            } = await sb
-                .from('friend_requests')
+            const [requestsRes, notificationsRes] = await Promise.all([
+                sb.from('friend_requests')
                 .select('*, profiles:from_id(name, avatar_url)')
                 .eq('to_id', currentUser.id)
                 .eq('status', 'pending')
                 .order('created_at', {
                     ascending: false
-                });
+                }),
+                sb.from('notifications')
+                .select('*, actor:actor_id(name, avatar_url), comments:comment_id(text), posts:post_id(caption)')
+                .eq('recipient_id', currentUser.id)
+                .order('created_at', {
+                    ascending: false
+                })
+            ]);
+            const requests = requestsRes.data || [];
+            const notifications = notificationsRes.error ? [] : (notificationsRes.data || []);
 
-            if (!requests || requests.length === 0) {
-                listEl.innerHTML = `<div class="empty-state"><div class="big">💛</div>No new notifications</div>`;
+            if (requests.length === 0 && notifications.length === 0) {
+                listEl.innerHTML = `<div class="empty-state"><div class="big">💛</div>${t('noNotifications')}</div>`;
                 return;
             }
 
-            listEl.innerHTML = `<div class="notif-section-title">Follow Requests</div>`;
+            listEl.innerHTML = '';
 
-            requests.forEach(r => {
-                const from = r.profiles || {};
-                listEl.innerHTML += `
-      <div class="notif-item" id="notif-${r.id}">
-        <a href="profile.html?id=${r.from_id}"><img class="avatar" src="${from.avatar_url || defaultAvatar(from.name)}"></a>
+            if (notifications.length > 0) {
+                listEl.innerHTML += `<div class="notif-section-title">${t('activity')}</div>`;
+                notifications.forEach(notification => {
+                            const actor = notification.actor || {};
+                            const action = notification.notification_type === 'comment' ? t('commentedPost') : t('likedPost');
+                            const comment = notification.comments && notification.comments.text;
+                            listEl.innerHTML += `
+      <div class="notif-item">
+        <a href="profile.html?id=${notification.actor_id}"><img class="avatar" src="${actor.avatar_url || defaultAvatar(actor.name)}" alt="${escapeHtml(actor.name || 'Member')}"></a>
         <div class="notif-item-body">
-          <strong>${escapeHtml(from.name || 'Someone')}</strong> wants to follow you.
+          <a class="username" href="profile.html?id=${notification.actor_id}"><strong>${escapeHtml(actor.name || 'Someone')}</strong></a> ${action}
+          ${comment ? `<div class="sub">${escapeHtml(comment)}</div>` : ''}
+          <span class="notif-time">${timeAgo(notification.created_at)}</span>
+        </div>
+        <a class="small-btn btn-add" href="home.html#post-${notification.post_id}">${t('viewPost')}</a>
+      </div>`;
+                });
+            }
+
+            if (requests.length > 0) {
+                listEl.innerHTML += `<div class="notif-section-title">${t('followRequests')}</div>`;
+                requests.forEach(r => {
+                    const from = r.profiles || {};
+                    listEl.innerHTML += `
+      <div class="notif-item" id="notif-${r.id}">
+        <a href="profile.html?id=${r.from_id}"><img class="avatar" src="${from.avatar_url || defaultAvatar(from.name)}" alt="${escapeHtml(from.name || 'Member')}"></a>
+        <div class="notif-item-body">
+          <a class="username" href="profile.html?id=${r.from_id}"><strong>${escapeHtml(from.name || 'Someone')}</strong></a> ${t('wantsToFollow')}
           <span class="notif-time">${timeAgo(r.created_at)}</span>
         </div>
         <div class="notif-actions">
-          <button class="small-btn btn-accept" onclick="acceptReq('${r.id}')">Confirm</button>
-          <button class="small-btn btn-decline" onclick="declineReq('${r.id}')">Delete</button>
+          <button class="small-btn btn-accept" onclick="acceptReq('${r.id}')">${t('confirm')}</button>
+          <button class="small-btn btn-decline" onclick="declineReq('${r.id}')">${t('delete')}</button>
         </div>
-      </div>`;
+    </div>`;
             });
+        }
         }
 
         async function acceptReq(id) {

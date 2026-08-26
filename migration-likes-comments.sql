@@ -14,14 +14,17 @@ create table if not exists public.likes (
 
 alter table public.likes enable row level security;
 
+drop policy if exists "Users see likes on visible posts" on public.likes;
 create policy "Users see likes on visible posts"
   on public.likes for select
   using (auth.role() = 'authenticated');
 
+drop policy if exists "Users can like posts" on public.likes;
 create policy "Users can like posts"
   on public.likes for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can unlike" on public.likes;
 create policy "Users can unlike"
   on public.likes for delete
   using (auth.uid() = user_id);
@@ -37,14 +40,34 @@ create table if not exists public.comments (
 
 alter table public.comments enable row level security;
 
+drop policy if exists "Users see comments on visible posts" on public.comments;
 create policy "Users see comments on visible posts"
   on public.comments for select
   using (auth.role() = 'authenticated');
 
+drop policy if exists "Users can comment" on public.comments;
 create policy "Users can comment"
   on public.comments for insert
   with check (auth.uid() = user_id);
 
 -- ---------- REALTIME ----------
-alter publication supabase_realtime add table public.likes;
-alter publication supabase_realtime add table public.comments;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'likes'
+  ) then
+    alter publication supabase_realtime add table public.likes;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'comments'
+  ) then
+    alter publication supabase_realtime add table public.comments;
+  end if;
+end
+$$;
