@@ -94,7 +94,7 @@ function renderSidebar(activePage, user, profile) {
       <!-- Brand -->
       <div class="sidebar-brand">
         <a href="home.html" class="brand-text">
-          <span style="color:var(--accent);">Ahir</span><span> Connect</span>
+          <span style="color:var(--text);">Ahir</span><span style="color:#1a237e;"> Connect</span>
         </a>
         <div class="brand-subtext">Connecting the Ahir Samaj</div>
       </div>
