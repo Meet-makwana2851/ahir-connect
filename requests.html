@@ -62,7 +62,7 @@
                 const from = r.profiles || {};
                 listEl.innerHTML += `
       <div class="notif-item" id="notif-${r.id}">
-        <img class="avatar" src="${from.avatar_url || defaultAvatar(from.name)}">
+        <a href="profile.html?id=${r.from_id}"><img class="avatar" src="${from.avatar_url || defaultAvatar(from.name)}"></a>
         <div class="notif-item-body">
           <strong>${escapeHtml(from.name || 'Someone')}</strong> wants to follow you.
           <span class="notif-time">${timeAgo(r.created_at)}</span>

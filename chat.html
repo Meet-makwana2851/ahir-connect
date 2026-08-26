@@ -85,7 +85,9 @@
                 item.className = 'chat-list-item';
                 item.dataset.friendId = f.friend_id;
                 item.innerHTML = `
-      <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}">
+      <a href="profile.html?id=${f.friend_id}" onclick="event.stopPropagation()">
+        <img class="avatar" src="${u.avatar_url || defaultAvatar(u.name)}">
+      </a>
       <div>
         <div class="chat-list-name">${escapeHtml(u.name||'Member')}</div>
         <div class="chat-list-preview">Tap to message</div>
