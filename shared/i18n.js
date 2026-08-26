@@ -7,7 +7,7 @@ const I18N_STRINGS = {
     en: {
         brandTagline: "Yaduvanshi Samaj Community Portal",
         spiritualGreeting: "Jai Muralidhar",
-        navFeed: "Samaj Feed",
+        navFeed: "Feed",
         navDirectory: "Member Directory",
         navDayro: "Culture & Dayro",
         navMessages: "Messages",
@@ -39,7 +39,7 @@ const I18N_STRINGS = {
     gu: {
         brandTagline: "યદુવંશ સમાજ ડિજિટલ મંચ",
         spiritualGreeting: "જય મુરલીધર",
-        navFeed: "સમાજ ફીડ",
+        navFeed: "ફીડ",
         navDirectory: "સભ્ય ડિરેક્ટરી",
         navDayro: "લોક સાહિત્ય & ડાયરો",
         navMessages: "સંદેશાઓ",
