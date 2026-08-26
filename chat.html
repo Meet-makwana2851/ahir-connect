@@ -122,6 +122,10 @@
             const wrap = document.getElementById('chatThreadWrap');
             wrap.innerHTML = `
     <div class="chat-thread-header">
+      <button class="chat-back-btn" id="chatBackBtn" aria-label="Back to messages">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
       <img class="avatar" src="${defaultAvatar(friendName)}">
       <span>${escapeHtml(friendName||'Friend')}</span>
     </div>
@@ -130,6 +134,11 @@
     <input type="text" id="chatInput" placeholder="${getCurrentLang() === 'gu' ? 'સંદેશ...' : 'Message...'}">
     <button id="chatSendBtn">${t('send')}</button>
     </div>`;
+
+            // Mobile: slide to thread panel
+            document.querySelector('.chat-layout').classList.add('chat-open');
+            document.getElementById('chatBackBtn').onclick = closeChat;
+
 
             const cid = chatIdFor(currentUser.id, friendId);
 
@@ -165,6 +174,13 @@
             document.getElementById('chatInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendChatMessage();
             });
+        }
+
+        function closeChat() {
+            document.querySelector('.chat-layout').classList.remove('chat-open');
+            document.querySelectorAll('.chat-list-item').forEach(i => i.classList.remove('active'));
+            if (chatChannel) { sb.removeChannel(chatChannel); chatChannel = null; }
+            selectedChatFriend = null;
         }
 
         async function sendChatMessage() {

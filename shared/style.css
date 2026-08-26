@@ -1462,6 +1462,32 @@ h3 {
 }
 
 
+/* Back button in chat thread header — hidden on desktop, shown on mobile */
+.chat-back-btn {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-ui);
+    padding: 0 6px 0 0;
+    flex-shrink: 0;
+}
+.chat-back-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
 /* ============================================================
    PROFILE — Instagram layout
    ============================================================ */
@@ -1960,41 +1986,44 @@ h3 {
     .profile-top-row {
         justify-content: center;
     }
-    /* Chat — compact list */
+    /* Chat — full-screen two-panel mobile pattern */
     .chat-layout {
-        height: calc(100vh - 120px);
-        flex-direction: column;
-    }
-    .chat-list {
-        width: 100%;
-        height: auto;
-        max-height: 200px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        display: flex;
+        height: calc(100vh - 80px);
         flex-direction: row;
-        overflow-x: auto;
+        position: relative;
+        overflow: hidden;
     }
-    .chat-list-item {
+    /* List panel: full width, slides in/out */
+    .chat-list {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        max-height: none;
+        border-right: none;
+        border-bottom: none;
         flex-direction: column;
-        padding: 10px 12px;
-        min-width: 70px;
-        align-items: center;
+        overflow-y: auto;
+        transform: translateX(0);
+        transition: transform .28s cubic-bezier(.4,0,.2,1);
+        z-index: 2;
+        background: var(--surface);
     }
-    .chat-list-item .avatar {
-        width: 48px;
-        height: 48px;
-    }
-    .chat-list-item .chat-list-name {
-        font-size: 11px;
-        text-align: center;
-    }
-    .chat-list-item .chat-list-preview {
-        display: none;
-    }
+    /* Thread panel: starts off-screen to the right */
     .chat-thread {
-        min-height: 0;
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        transform: translateX(100%);
+        transition: transform .28s cubic-bezier(.4,0,.2,1);
+        z-index: 3;
+        background: var(--surface);
     }
+    /* When chat is open: list slides left, thread slides in */
+    .chat-layout.chat-open .chat-list  { transform: translateX(-100%); }
+    .chat-layout.chat-open .chat-thread { transform: translateX(0); }
+    /* Back button shown only on mobile */
+    .chat-back-btn { display: flex; }
+
     /* Explore grid */
     .explore-grid {
         gap: 2px;
