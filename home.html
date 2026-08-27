@@ -280,15 +280,13 @@
     .sort((a, b) => a[1].allSeen - b[1].allSeen); // unseen first
 
   others.forEach(([authorId, group]) => {
-    const p = group.profile;
-    html += `<div class="story-item" onclick="viewStoryGroup('${authorId}')">
-      <div class="story-ring ${group.allSeen ? 'seen' : ''}">
-        <a href="profile.html?id=${authorId}" onclick="event.stopPropagation()">
-          <img src="${p.avatar_url || defaultAvatar(p.name)}">
-        </a>
-      </div>
-      <span class="story-name">${escapeHtml(p.name || 'User')}</span>
-    </div>`;
+              const p = group.profile;
+              html += `<div class="story-item" onclick="viewStoryGroup('${authorId}')" role="button" tabindex="0" onkeydown="if(event.key === 'Enter' || event.key === ' ') viewStoryGroup('${authorId}')">
+                <div class="story-ring ${group.allSeen ? 'seen' : ''}">
+                  <img src="${p.avatar_url || defaultAvatar(p.name)}">
+                </div>
+                <span class="story-name">${escapeHtml(p.name || 'User')}</span>
+              </div>`;
   });
 
   // If no stories at all, just show "Your story" with add button
