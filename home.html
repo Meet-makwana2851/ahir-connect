@@ -38,10 +38,10 @@
             <div class="circular-banner">
                 <div class="circular-badge-pin" id="announcementPin">📌 Announcement</div>
                 <div class="circular-content">
-                    <div class="circular-title" id="announcementTitle">Shree Dwarkadhish Janmashtami Festival & Blood Donation Camp 2026</div>
-                    <div class="circular-desc" id="announcementDesc">Date: 28th August • Venue: Ahir Samaj Hall • All community families are welcome.</div>
+                    <div class="circular-title" id="announcementTitle">No new announcements</div>
+                    <div class="circular-desc" id="announcementDesc">Have a community announcement to share? Contact us and we will help post it for everyone.</div>
                 </div>
-                <a href="dayro.html" class="circular-btn" id="announcementBtn">View Details</a>
+                  <a href="contact.html?subject=Community%20announcement" class="circular-btn" id="announcementBtn">Contact Us</a>
             </div>
 
             <!-- Stories row -->
@@ -121,7 +121,10 @@
             if (pinEl) pinEl.textContent = t('announcementPin');
             if (titleEl) titleEl.textContent = t('announcementTitle');
             if (descEl) descEl.textContent = t('announcementDesc');
-            if (btnEl) btnEl.textContent = t('announcementBtn');
+            if (btnEl) {
+              btnEl.textContent = t('announcementBtn');
+              btnEl.href = 'contact.html?subject=' + encodeURIComponent(getCurrentLang() === 'gu' ? 'સમાજની જાહેરાત' : 'Community announcement');
+            }
         }
 
         function applyHomeLanguage() {
@@ -382,7 +385,7 @@ async function loadFeed(){
   const listEl = document.getElementById('feedList');
   const { data: posts, error } = await sb
     .from('posts')
-    .select('*, profiles:author_id ( id, name, avatar_url, gam, gotra, district, profession )')
+    .select('*, profiles:author_id ( id, name, avatar_url, district, profession )')
     .order('created_at', { ascending: false });
 
   if(error){ listEl.innerHTML = `<div class="empty-state">Couldn't load feed.</div>`; return; }
@@ -462,7 +465,6 @@ function renderFeed(posts, likeCountMap, myLikes, commentMap){
           <div class="post-author-name-row">
             <a class="username" href="profile.html?id=${author.id}">${escapeHtml(author.name || 'Member')}</a>
           </div>
-          ${author.gam ? `<div class="tag-gam">📍 ${t('gamLabel')}: ${escapeHtml(author.gam)}${author.district ? ` (${escapeHtml(author.district)})` : ''}</div>` : ''}
         </div>
         <div class="post-menu-wrap">
           <button class="post-more-btn" onclick="togglePostMenu(event, '${p.id}')" aria-label="Post options">⋯</button>

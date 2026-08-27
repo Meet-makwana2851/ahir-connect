@@ -249,7 +249,6 @@ function applyProfileLanguage() {
 function updateProfileHeader(p) {
     document.getElementById('profName').textContent = p.name || 'Member';
     let loc = [];
-    if (p.gam) loc.push('📍 Native Village: ' + p.gam);
     if (p.district) loc.push('(' + p.district + ')');
     if (p.residence_city) loc.push('• Currently in: ' + p.residence_city);
     document.getElementById('profHeadline').textContent = p.profession ? '💼 ' + p.profession : occLabel(p);
@@ -260,7 +259,7 @@ function updateProfileHeader(p) {
 }
 
 function occLabel(p) {
-    if (!p.occupation_type) return '';
+    if (!p.occupation_type || p.occupation_type === 'student' && (!p.occupation_field || p.occupation_field === 'IT')) return '';
     if (getCurrentLang() === 'gu') {
         const gm = { student:'વિદ્યાર્થી', government:'સરકારી ક્ષેત્ર', private:'ખાનગી ક્ષેત્ર' };
         const gf = { IT:'આઈટી', Healthcare:'આરોગ્યસંભાળ', Education:'શિક્ષણ', Business:'વ્યવસાય', Agriculture:'કૃષિ', Engineering:'એન્જિનિયરિંગ', Finance:'નાણાં' };
@@ -287,7 +286,10 @@ function formatBirthDate(value) {
 
 function renderDetailGrid(p) {
     const grid = document.getElementById('detailGrid');
+    const isLegacyDefault = p.occupation_type === 'student' && (!p.occupation_field || p.occupation_field === 'IT');
     const rows = [
+        ['💼', t('occupation'), isLegacyDefault ? '' : occLabel(p)],
+        ['🧭', t('fieldOfWork'), isLegacyDefault ? '' : p.occupation_field],
         ['🎓', t('education'), p.education],
         ['🏙️', t('currentResidence'), p.residence_city],
         ['🧑‍💻', t('workExperience'), p.past_experience],
@@ -302,13 +304,14 @@ function fillEditForm(p) {
     document.getElementById('editBio').value = p.bio || '';
     document.getElementById('editCity').value = p.residence_city || '';
     document.getElementById('editEducation').value = p.education || '';
-    document.getElementById('editOccType').value = p.occupation_type || '';
+    const isLegacyDefault = p.occupation_type === 'student' && (!p.occupation_field || p.occupation_field === 'IT');
+    document.getElementById('editOccType').value = isLegacyDefault ? '' : (p.occupation_type || '');
     const kf = ['IT','Healthcare','Education','Business','Agriculture','Engineering','Finance'];
     if (p.occupation_field && !kf.includes(p.occupation_field)) {
         document.getElementById('editOccField').value = 'other';
         document.getElementById('editOccOther').value = p.occupation_field;
         document.getElementById('editOccOtherWrap').style.display = 'block';
-    } else { document.getElementById('editOccField').value = p.occupation_field || ''; }
+    } else { document.getElementById('editOccField').value = isLegacyDefault ? '' : (p.occupation_field || ''); }
     document.getElementById('editPastExp').value = p.past_experience || '';
     document.getElementById('editBirthDate').value = p.birth_date || '';
     document.getElementById('editMaritalStatus').value = p.marital_status || '';

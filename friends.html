@@ -22,7 +22,7 @@
             <div class="directory-heading">
                 <div>
                     <h1 id="dirTitle">👥 Member Directory</h1>
-                    <div id="dirSubtitle" style="font-size:13px; color:var(--text-2); margin-top:4px;">Find community members by name, native village, profession or residential city</div>
+                    <div id="dirSubtitle" style="font-size:13px; color:var(--text-2); margin-top:4px;">Find community members by name, profession or residential city</div>
                 </div>
                 <span id="memberCount" style="font-weight:700; color:var(--peacock-teal);"></span>
             </div>
@@ -38,11 +38,11 @@
 
             <!-- Quick Filter Row -->
             <div class="directory-filter-row" style="display:flex; gap:10px; flex-wrap:wrap;">
-                <select class="directory-filter-select" id="filterVillage" title="Filter by village" onchange="applyFilters()">
-                    <option value="" id="optAllVillages">All Villages</option>
-                </select>
                 <select class="directory-filter-select" id="filterDistrict" title="Filter by district" onchange="applyFilters()">
                     <option value="" id="optAllDistricts">All Districts</option>
+                </select>
+                <select class="directory-filter-select" id="filterVillage" title="Choose a district first to filter by village" onchange="applyFilters()" disabled>
+                    <option value="" id="optAllVillages">Choose a district first</option>
                 </select>
                 <select class="directory-filter-select" id="filterOccupation" title="Filter by occupation" onchange="applyFilters()">
                     <option value="" id="optAllOccupations">All Occupations</option>
@@ -79,8 +79,8 @@
             document.getElementById('userSearch').placeholder = 'Search by name, village, occupation or city...';
             document.getElementById('optAllDistricts').textContent = t('allDistricts');
             document.getElementById('dirTitle').textContent = getCurrentLang() === 'gu' ? '👥 સભ્ય ડિરેક્ટરી' : '👥 Member Directory';
-            document.getElementById('dirSubtitle').textContent = getCurrentLang() === 'gu' ? 'નામ, રહેઠાણના ગામ અથવા શહેર અને વ્યવસાયથી સભ્યો શોધો' : 'Find community members by name, residential city or village, and occupation';
-            document.getElementById('userSearch').placeholder = getCurrentLang() === 'gu' ? 'નામ, ગામ, વ્યવસાય અથવા શહેર શોધો...' : 'Search by name, village, occupation or city...';
+            document.getElementById('dirSubtitle').textContent = getCurrentLang() === 'gu' ? 'નામ, રહેઠાણનું શહેર અને વ્યવસાયથી સભ્યો શોધો' : 'Find community members by name, residential city, and occupation';
+            document.getElementById('userSearch').placeholder = getCurrentLang() === 'gu' ? 'નામ, વ્યવસાય અથવા શહેર શોધો...' : 'Search by name, occupation or city...';
             document.getElementById('optAllVillages').textContent = t('allVillages');
             document.getElementById('optAllOccupations').textContent = t('allOccupations');
         }
@@ -110,7 +110,8 @@
             const villageSelect = document.getElementById('filterVillage');
             villageSelect.innerHTML = district ?
                 `<option value="">${t('allVillages')}</option>` :
-                `<option value="">${t('selectDistrictFirst')}</option>`;
+                `<option value="">Choose a district first</option>`;
+            villageSelect.disabled = !district;
 
             if (!district) return;
 
@@ -168,22 +169,15 @@
         }
 
         /* Build occupation dropdown from the edit-profile occupation fields. */
-        function buildOccupationDropdown(members) {
+        function buildOccupationDropdown() {
             const select = document.getElementById('filterOccupation');
             const current = select.value;
-            const occupations = Array.from(new Map(members
-                        .map(member => {
-                            const type = (member.occupation_type || '').trim();
-                            const field = (member.occupation_field || '').trim();
-                            const label = occupationLabel(type, field);
-                            return label ? [`${type}::${field}`, {
-                                key: `${type}::${field}`,
-                                label
-                            }] : null;
-                        })
-                        .filter(Boolean))
-                    .values())
-                .sort((a, b) => a.label.localeCompare(b.label));
+            const types = [['student', 'Student'], ['government', 'Government Sector'], ['private', 'Private Sector']];
+            const fields = ['IT', 'Healthcare', 'Education', 'Business', 'Agriculture', 'Engineering', 'Finance', 'Other'];
+            const occupations = types.flatMap(([type, typeLabel]) => fields.map(field => ({
+                key: `${type}::${field}`,
+                label: `${typeLabel} — ${field}`
+            })));
             select.innerHTML = `<option value="">${t('allOccupations')}</option>`;
             occupations.forEach(occupation => {
                 const opt = document.createElement('option');
@@ -201,7 +195,7 @@
 
             const memberRequest = sb
                 .from('profiles')
-                .select('id, name, avatar_url, bio, gam, district, profession, occupation_type, occupation_field, residence_city')
+                .select('id, name, avatar_url, bio, district, profession, occupation_type, occupation_field, residence_city')
                 .order('name');
             let {
                 data: members,
@@ -230,7 +224,7 @@
                 return;
             }
             allMembers = members || [];
-            buildOccupationDropdown(allMembers);
+            buildOccupationDropdown();
             applyFilters();
         }
 
@@ -239,27 +233,29 @@
             const district = document.getElementById('filterDistrict').value.toLowerCase();
             const village = document.getElementById('filterVillage').value.toLowerCase();
             const occupation = document.getElementById('filterOccupation').value.toLowerCase();
+            const knownFields = ['it', 'healthcare', 'education', 'business', 'agriculture', 'engineering', 'finance'];
 
             const filtered = allMembers.filter(u => {
                 const nameMatch = (u.name || '').toLowerCase().includes(term);
-                const gamMatch = (u.gam || '').toLowerCase().includes(term);
                 const profMatch = (u.profession || '').toLowerCase().includes(term);
                 const occupationMatch = occupationLabel(u.occupation_type, u.occupation_field).toLowerCase().includes(term);
                 const cityMatch = (u.residence_city || '').toLowerCase().includes(term);
                 const districtTermMatch = (u.district || '').toLowerCase().includes(term);
-                const matchesTerm = !term || (nameMatch || gamMatch || profMatch || occupationMatch || cityMatch || districtTermMatch);
+                const matchesTerm = !term || (nameMatch || profMatch || occupationMatch || cityMatch || districtTermMatch);
 
                 const matchesDistrict = !district ||
                     (u.district || '').toLowerCase().includes(district) ||
-                    (u.gam || '').toLowerCase().includes(district) ||
                     (u.residence_city || '').toLowerCase().includes(district);
 
                 const matchesVillage = !village ||
                     (u.residence_city || '').toLowerCase() === village ||
-                    (u.gam || '').toLowerCase() === village;
+                    (u.residence_city || '').toLowerCase() === village;
 
+                const memberOccupation = (u.occupation_type || '').toLowerCase();
+                const memberField = (u.occupation_field || '').toLowerCase();
                 const matchesOccupation = !occupation ||
-                    `${(u.occupation_type || '').toLowerCase()}::${(u.occupation_field || '').toLowerCase()}` === occupation;
+                    `${memberOccupation}::${memberField}` === occupation ||
+                    occupation.endsWith('::other') && `${memberOccupation}::${memberField}`.startsWith(occupation.split('::')[0] + '::') && !knownFields.includes(memberField);
 
                 return matchesTerm && matchesDistrict && matchesVillage && matchesOccupation;
             });
@@ -286,7 +282,6 @@
                         <div class="post-author-name-row">
                             <a class="name" href="profile.html?id=${u.id}" onclick="event.stopPropagation()">${escapeHtml(u.name || 'Member')}</a>
                         </div>
-                        ${u.gam ? `<div style="font-size:12px; color:var(--peacock-teal); font-weight:600; margin-top:2px;">📍 ${t('gamLabel')}: ${escapeHtml(u.gam)}${u.district ? ` (${escapeHtml(u.district)})` : ''}</div>` : ''}
                         ${u.residence_city ? `<div style="font-size:12px; color:var(--accent); font-weight:500; margin-top:2px;">🏙️ Lives in: ${escapeHtml(u.residence_city)}</div>` : ''}
                         ${u.profession ? `<div style="font-size:11.5px; color:var(--text-2); margin-top:2px;">💼 ${escapeHtml(u.profession)}</div>` : ''}
                         ${u.bio ? `<div class="sub">${escapeHtml(u.bio)}</div>` : ''}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us — AhirConnect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <script>if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");</script>
+</head>
+
+<body>
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+        <main class="main-panel contact-panel">
+            <a class="about-back" href="home.html" aria-label="Back to feed">← <span>Feed</span></a>
+            <section class="contact-hero">
+                <p class="about-eyebrow">AhirConnect</p>
+                <h1>Let’s keep the community informed.</h1>
+                <p>Have an event, achievement, opportunity, or important community update to share? Send us the details and we will review it for publication.</p>
+            </section>
+            <section class="contact-layout">
+                <div class="contact-details">
+                    <p class="about-eyebrow">Contact us</p>
+                    <h2>Reach out directly.</h2>
+                    <a href="mailto:makwanahetavi06@gmail.com">makwanahetavi06@gmail.com</a>
+                    <a href="tel:+917567102555">+91 75671 02555</a>
+                    <a href="tel:+917984640598">+91 79846 40598</a>
+                    <p class="contact-note">For announcement requests, please include the title, date, venue, and any relevant links or media.</p>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <div class="field"><label for="contactName">Your name</label><input id="contactName" type="text" required></div>
+                    <div class="field"><label for="contactEmail">Your email</label><input id="contactEmail" type="email" required></div>
+                    <div class="field"><label for="contactQuery">Your query</label><textarea id="contactQuery" rows="6" required placeholder="Tell us about the announcement..."></textarea></div>
+                    <button class="btn btn-primary" type="submit">Send query</button>
+                    <p class="contact-form-note" id="contactStatus" aria-live="polite"></p>
+                </form>
+            </section>
+        </main>
+    </div>
+    <script src="shared/config.js"></script>
+    <script src="shared/i18n.js"></script>
+    <script src="shared/utils.js"></script>
+    <script>
+        (async() => {
+            const ctx = await requireAuth();
+            if (!ctx) return;
+            renderSidebar('home', ctx.user, ctx.profile);
+            const subject = new URLSearchParams(window.location.search).get('subject');
+            if (subject) document.getElementById('contactQuery').value = subject + ': ';
+        })();
+        document.getElementById('contactForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = document.getElementById('contactName').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const query = document.getElementById('contactQuery').value.trim();
+            const subject = encodeURIComponent('AhirConnect announcement query');
+            const body = encodeURIComponent('Name: ' + name + '\nEmail: ' + email + '\n\nQuery:\n' + query);
+            window.location.href = 'mailto:makwanahetavi06@gmail.com?subject=' + subject + '&body=' + body;
+            document.getElementById('contactStatus').textContent = 'Your email app is opening.';
+        });
+    </script>
+</body>
+
+</html>
