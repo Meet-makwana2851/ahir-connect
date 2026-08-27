@@ -40,6 +40,7 @@ const ICONS = {
     create: `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
     profile: `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
     more: `<svg viewBox="0 0 24 24"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>`,
+    settings: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-3v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H5v-3h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h3v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.1 2.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v3h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,
     comment: `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
     share: `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
     bookmark: `<svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
@@ -79,7 +80,7 @@ function renderSidebar(activePage, user, profile) {
     const navHtml = navItems.map(item => {
                 const isActive = item.page === activePage;
                 return `
-    <a class="nav-item ${isActive ? 'active' : ''}" href="${item.href}">
+    <a class="nav-item ${isActive ? 'active' : ''} ${item.page === 'profile' ? 'nav-profile' : ''}" href="${item.href}">
       ${isActive && ICONS[item.icon + 'Fill'] ? ICONS[item.icon + 'Fill'] : (ICONS[item.icon] || ICONS.home)}
       <span class="nav-label">${item.label}</span>
       ${item.dotId ? `<span class="nav-dot" id="${item.dotId}" style="display:none;"></span>` : ''}
@@ -108,6 +109,10 @@ function renderSidebar(activePage, user, profile) {
           ${ICONS.create}
           <span class="nav-label">${typeof t === 'function' ? t('newPost') : 'New Post'}</span>
         </button>
+                <button class="nav-item mobile-more-item ${activePage === 'more' || activePage === 'profile' ? 'active' : ''}" id="mobileMoreBtn" type="button" aria-expanded="false">
+                    ${ICONS.more}
+                    <span class="nav-label">More</span>
+                </button>
       </nav>
 
       <!-- Footer: More -->
@@ -118,7 +123,20 @@ function renderSidebar(activePage, user, profile) {
         </a>
       </div>
 
-    </div>`;
+        </div>
+        <div class="mobile-more-backdrop" id="mobileMoreBackdrop" hidden>
+            <section class="mobile-more-sheet" role="dialog" aria-modal="true" aria-labelledby="mobileMoreTitle">
+                <div class="mobile-more-handle"></div>
+                <div class="mobile-more-header"><strong id="mobileMoreTitle">More</strong><button type="button" class="mobile-more-close" id="mobileMoreClose" aria-label="Close menu">×</button></div>
+                <nav class="mobile-more-links">
+                    <a href="profile.html">${ICONS.profile}<span>Profile</span></a>
+                    <a href="more.html">${ICONS.settings}<span>Settings</span></a>
+                    <a href="about.html">${ICONS.more}<span>About AhirConnect</span></a>
+                    <a href="contact.html">${ICONS.messages}<span>Contact Us</span></a>
+                    <button type="button" id="mobileLogoutBtn">${ICONS.logout}<span>Log out</span></button>
+                </nav>
+            </section>
+        </div>`;
 
     /* Create post modal trigger */
     document.getElementById('createPostBtn')?.addEventListener('click', () => {
@@ -127,6 +145,25 @@ function renderSidebar(activePage, user, profile) {
         } else {
             window.location.href = 'home.html?create=1';
         }
+    });
+
+    const moreButton = document.getElementById('mobileMoreBtn');
+    const moreBackdrop = document.getElementById('mobileMoreBackdrop');
+    const closeMoreMenu = () => {
+        if (!moreBackdrop) return;
+        moreBackdrop.hidden = true;
+        moreButton?.setAttribute('aria-expanded', 'false');
+    };
+    moreButton?.addEventListener('click', () => {
+        moreBackdrop.hidden = false;
+        moreButton.setAttribute('aria-expanded', 'true');
+    });
+    document.getElementById('mobileMoreClose')?.addEventListener('click', closeMoreMenu);
+    moreBackdrop?.addEventListener('click', event => { if (event.target === moreBackdrop) closeMoreMenu(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMoreMenu(); });
+    document.getElementById('mobileLogoutBtn')?.addEventListener('click', async () => {
+        await sb.auth.signOut();
+        window.location.href = 'login.html';
     });
 
     /* Live notification dots */
