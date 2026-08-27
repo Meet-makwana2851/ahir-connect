@@ -129,6 +129,7 @@ function renderSidebar(activePage, user, profile) {
                 <div class="mobile-more-handle"></div>
                 <div class="mobile-more-header"><strong id="mobileMoreTitle">More</strong><button type="button" class="mobile-more-close" id="mobileMoreClose" aria-label="Close menu">×</button></div>
                 <nav class="mobile-more-links">
+                    <button type="button" id="mobileCreatePostBtn">${ICONS.create}<span>New Post</span></button>
                     <a href="profile.html">${ICONS.profile}<span>Profile</span></a>
                     <a href="more.html">${ICONS.settings}<span>Settings</span></a>
                     <a href="about.html">${ICONS.more}<span>About AhirConnect</span></a>
@@ -160,6 +161,11 @@ function renderSidebar(activePage, user, profile) {
     });
     document.getElementById('mobileMoreClose')?.addEventListener('click', closeMoreMenu);
     moreBackdrop?.addEventListener('click', event => { if (event.target === moreBackdrop) closeMoreMenu(); });
+    document.getElementById('mobileCreatePostBtn')?.addEventListener('click', () => {
+        closeMoreMenu();
+        if (typeof openCreateModal === 'function') openCreateModal();
+        else window.location.href = 'home.html?create=1';
+    });
     document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMoreMenu(); });
     document.getElementById('mobileLogoutBtn')?.addEventListener('click', async () => {
         await sb.auth.signOut();
